@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>belt_marking_laser</name>
+  <version>1.0.0</version>
+  <description>LaserInterface abstraction: dry-contact pedal laser (real) and simulated CO2 laser controller.</description>
+  <maintainer email="basheeraltaweel@gmail.com">Basheer Al-Tawil</maintainer>
+  <license>MIT</license>
+
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

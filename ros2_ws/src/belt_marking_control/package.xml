@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>belt_marking_control</name>
+  <version>1.0.0</version>
+  <description>Machine control: PackML state machine, job planner, alarms, recipes, production database, OEE.</description>
+  <maintainer email="basheeraltaweel@gmail.com">Basheer Al-Tawil</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>belt_marking_interfaces</depend>
+  <depend>belt_marking_laser</depend>
+  <depend>belt_marking_hardware</depend>
+  <depend>std_srvs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>visualization_msgs</depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
