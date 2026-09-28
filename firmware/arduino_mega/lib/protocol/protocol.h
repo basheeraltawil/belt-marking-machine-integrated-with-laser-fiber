@@ -16,21 +16,40 @@ const uint8_t MAX_PAYLOAD = 64;
 const uint8_t VERSION = 1;
 
 enum MsgId : uint8_t {
-  HEARTBEAT = 0x01, GET_INFO = 0x02,
-  MOVE_REL = 0x10, JOG = 0x11, STOP = 0x12, ENABLE = 0x13, ZERO = 0x14,
-  SET_OUTPUT = 0x20, PULSE_OUTPUT = 0x21,
-  SET_CONFIG = 0x30, RESET_FAULTS = 0x31,
-  ACK = 0x80, NAK = 0x81, STATUS = 0x90, INFO = 0x91, EVENT = 0x92,
+  HEARTBEAT = 0x01,
+  GET_INFO = 0x02,
+  MOVE_REL = 0x10,
+  JOG = 0x11,
+  STOP = 0x12,
+  ENABLE = 0x13,
+  ZERO = 0x14,
+  SET_OUTPUT = 0x20,
+  PULSE_OUTPUT = 0x21,
+  SET_CONFIG = 0x30,
+  RESET_FAULTS = 0x31,
+  ACK = 0x80,
+  NAK = 0x81,
+  STATUS = 0x90,
+  INFO = 0x91,
+  EVENT = 0x92,
 };
 
 enum NakReason : uint8_t {
-  NAK_UNKNOWN = 1, NAK_LENGTH = 2, NAK_INTERLOCK = 3, NAK_FAULT = 4, NAK_BUSY = 5,
-  NAK_DISABLED = 6, NAK_PARAM = 7,
+  NAK_UNKNOWN = 1,
+  NAK_LENGTH = 2,
+  NAK_INTERLOCK = 3,
+  NAK_FAULT = 4,
+  NAK_BUSY = 5,
+  NAK_DISABLED = 6,
+  NAK_PARAM = 7,
 };
 
 enum ConfigKey : uint8_t {
-  CFG_HEARTBEAT_TIMEOUT_MS = 1, CFG_DEBOUNCE_MS = 2, CFG_INPUT_INVERT_MASK = 3,
-  CFG_KNIFE_INTERLOCK = 4, CFG_MAX_SPEED_STEPS_S = 5,
+  CFG_HEARTBEAT_TIMEOUT_MS = 1,
+  CFG_DEBOUNCE_MS = 2,
+  CFG_INPUT_INVERT_MASK = 3,
+  CFG_KNIFE_INTERLOCK = 4,
+  CFG_MAX_SPEED_STEPS_S = 5,
 };
 
 enum EventCode : uint8_t { EV_BOOT = 1, EV_HEARTBEAT_LOST = 2, EV_ESTOP = 3, EV_DRIVER_ALM = 4 };
@@ -58,7 +77,10 @@ class Parser {
   bool feed(uint8_t b);
   const Frame& frame() const { return frame_; }
   uint16_t crcErrors() const { return crc_errors_; }
-  void reset() { state_ = S_SOF0; idx_ = 0; }
+  void reset() {
+    state_ = S_SOF0;
+    idx_ = 0;
+  }
 
  private:
   enum State { S_SOF0, S_SOF1, S_LEN, S_SEQ, S_ID, S_PAYLOAD, S_CRC0, S_CRC1 };
@@ -74,7 +96,10 @@ class Parser {
 class Writer {
  public:
   explicit Writer(uint8_t* buf) : buf_(buf), n_(0) {}
-  Writer& u8(uint8_t v) { buf_[n_++] = v; return *this; }
+  Writer& u8(uint8_t v) {
+    buf_[n_++] = v;
+    return *this;
+  }
   Writer& i8(int8_t v) { return u8(static_cast<uint8_t>(v)); }
   Writer& u16(uint16_t v) { return raw(&v, 2); }
   Writer& u32(uint32_t v) { return raw(&v, 4); }
@@ -93,10 +118,26 @@ class Reader {
   Reader(const uint8_t* buf, uint8_t len) : buf_(buf), len_(len), n_(0) {}
   uint8_t u8() { return buf_[n_++]; }
   int8_t i8() { return static_cast<int8_t>(u8()); }
-  uint16_t u16() { uint16_t v; raw(&v, 2); return v; }
-  uint32_t u32() { uint32_t v; raw(&v, 4); return v; }
-  int32_t i32() { int32_t v; raw(&v, 4); return v; }
-  float f32() { float v; raw(&v, 4); return v; }
+  uint16_t u16() {
+    uint16_t v;
+    raw(&v, 2);
+    return v;
+  }
+  uint32_t u32() {
+    uint32_t v;
+    raw(&v, 4);
+    return v;
+  }
+  int32_t i32() {
+    int32_t v;
+    raw(&v, 4);
+    return v;
+  }
+  float f32() {
+    float v;
+    raw(&v, 4);
+    return v;
+  }
   void raw(void* p, uint8_t n);
 
  private:

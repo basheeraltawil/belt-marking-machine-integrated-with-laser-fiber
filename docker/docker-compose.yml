@@ -1,0 +1,45 @@
+# Run the simulation with GUI (Linux, X11):
+#   xhost +local:docker
+#   docker compose -f docker/docker-compose.yml up --build sim
+# Headless, e.g. on a server / CI (no windows, all tests + scenarios):
+#   docker compose -f docker/docker-compose.yml run --rm test
+services:
+  sim:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: belt-marking-sim:humble
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=42
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - belt_marking_data:/root/.belt_marking
+    devices:
+      - /dev/dri:/dev/dri            # GPU for Gazebo rendering (remove if not available)
+    network_mode: host
+    command: ros2 launch belt_marking_bringup sim.launch.py
+
+  headless:
+    image: belt-marking-sim:humble
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      - QT_QPA_PLATFORM=offscreen
+    command: ros2 launch belt_marking_bringup sim.launch.py gazebo:=false rviz:=false ui:=false
+
+  test:
+    image: belt-marking-sim:humble
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      - QT_QPA_PLATFORM=offscreen
+      - SOAK_HOURS=8
+    working_dir: /ws
+    command: bash -c "colcon test --return-code-on-test-failure && colcon test-result --verbose && ros2 run belt_marking_control run_scenarios"
+
+volumes:
+  belt_marking_data:

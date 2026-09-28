@@ -8,22 +8,50 @@ namespace logic {
 
 // ---- input bits (logical, after polarity correction)
 enum InputBit : uint8_t {
-  IN_ESTOP_OK = 0, IN_DOOR_CLOSED, IN_AIR_OK, IN_BELT_PRESENT, IN_KNIFE_EXTENDED,
-  IN_KNIFE_RETRACTED, IN_KNIFE_START, IN_LASER_BUSY_0, IN_LASER_BUSY_1, IN_LASER_BUSY_2,
-  IN_LASER_BUSY_3, IN_DRIVER_FAULT, IN_SAFETY_RELAY_OK, IN_HOME, IN_COUNT
+  IN_ESTOP_OK = 0,
+  IN_DOOR_CLOSED,
+  IN_AIR_OK,
+  IN_BELT_PRESENT,
+  IN_KNIFE_EXTENDED,
+  IN_KNIFE_RETRACTED,
+  IN_KNIFE_START,
+  IN_LASER_BUSY_0,
+  IN_LASER_BUSY_1,
+  IN_LASER_BUSY_2,
+  IN_LASER_BUSY_3,
+  IN_DRIVER_FAULT,
+  IN_SAFETY_RELAY_OK,
+  IN_HOME,
+  IN_COUNT
 };
 
 // ---- output bits
 enum OutputBit : uint8_t {
-  OUT_KNIFE_EXTEND = 0, OUT_KNIFE_RETRACT, OUT_ZAIR, OUT_DC_MOTOR, OUT_LASER_0, OUT_LASER_1,
-  OUT_LASER_2, OUT_LASER_3, OUT_LIGHT_RED, OUT_LIGHT_YELLOW, OUT_LIGHT_GREEN, OUT_BUZZER,
-  OUT_COUNT, OUT_STEPPER_ENABLE = 12
+  OUT_KNIFE_EXTEND = 0,
+  OUT_KNIFE_RETRACT,
+  OUT_ZAIR,
+  OUT_DC_MOTOR,
+  OUT_LASER_0,
+  OUT_LASER_1,
+  OUT_LASER_2,
+  OUT_LASER_3,
+  OUT_LIGHT_RED,
+  OUT_LIGHT_YELLOW,
+  OUT_LIGHT_GREEN,
+  OUT_BUZZER,
+  OUT_COUNT,
+  OUT_STEPPER_ENABLE = 12
 };
 
 // ---- fault flags (IoStatus.FAULT_*)
 enum FaultBit : uint16_t {
-  F_HEARTBEAT_LOST = 1, F_ESTOP = 2, F_DRIVER_ALM = 4, F_WDT_RESET = 8,
-  F_INTERLOCK_REJECT = 16, F_KNIFE_SENSOR_CONFLICT = 32, F_RX_OVERFLOW = 64
+  F_HEARTBEAT_LOST = 1,
+  F_ESTOP = 2,
+  F_DRIVER_ALM = 4,
+  F_WDT_RESET = 8,
+  F_INTERLOCK_REJECT = 16,
+  F_KNIFE_SENSOR_CONFLICT = 32,
+  F_RX_OVERFLOW = 64
 };
 
 inline bool hasBit(uint16_t mask, uint8_t b) { return (mask >> b) & 1u; }
@@ -49,12 +77,15 @@ class Debouncer {
 class HeartbeatWatchdog {
  public:
   void configure(uint16_t timeout_ms) { timeout_ms_ = timeout_ms; }
-  void beat(uint32_t now_ms) { last_ = now_ms; seen_ = true; }
+  void beat(uint32_t now_ms) {
+    last_ = now_ms;
+    seen_ = true;
+  }
   // Returns true exactly once, on the tripping edge. Armed by the first heartbeat.
   bool update(uint32_t now_ms);
   bool tripped() const { return tripped_; }
   bool fresh(uint32_t now_ms) const { return seen_ && now_ms - last_ <= timeout_ms_; }
-  bool reset(uint32_t now_ms);   // only succeeds with a fresh heartbeat
+  bool reset(uint32_t now_ms);  // only succeeds with a fresh heartbeat
   uint16_t timeout() const { return timeout_ms_; }
 
  private:
@@ -79,11 +110,11 @@ class PulseTimers {
 };
 
 struct MachineView {
-  uint16_t inputs;      // debounced logical inputs
-  uint16_t faults;      // current fault flags
-  bool enabled;         // stepper driver enabled
+  uint16_t inputs;  // debounced logical inputs
+  uint16_t faults;  // current fault flags
+  bool enabled;     // stepper driver enabled
   bool moving;
-  bool knife_interlock; // require knife retracted for belt motion
+  bool knife_interlock;  // require knife retracted for belt motion
 };
 
 // Interlock rules (identical to FakePlant in the Python simulation). 0 = allowed,
@@ -95,7 +126,11 @@ uint8_t checkOutput(const MachineView& m, uint8_t out, bool value);
 class Dedup {
  public:
   bool isDuplicate(uint8_t seq, uint8_t id) const { return valid_ && seq == seq_ && id == id_; }
-  void remember(uint8_t seq, uint8_t id) { seq_ = seq; id_ = id; valid_ = true; }
+  void remember(uint8_t seq, uint8_t id) {
+    seq_ = seq;
+    id_ = id;
+    valid_ = true;
+  }
 
  private:
   uint8_t seq_ = 0, id_ = 0;

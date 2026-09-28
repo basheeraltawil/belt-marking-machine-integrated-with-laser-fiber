@@ -63,7 +63,7 @@ class LaserInterface(ABC):
     def poll_done(self, now: float) -> LaserResult:
         """Non-blocking state of the last trigger."""
 
-    def reset(self) -> None:
+    def reset(self) -> None:  # noqa: B027 - optional hook, default no-op
         """Forget the last trigger (e.g. after recovery)."""
 
     def wait_done(self, timeout: float, clock=time.monotonic, sleep=time.sleep,

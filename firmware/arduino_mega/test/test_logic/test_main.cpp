@@ -12,22 +12,22 @@ static void test_debounce_accepts_only_stable_changes() {
   d.configure(5);
   d.force(0);
   TEST_ASSERT_EQUAL_HEX16(0, d.update(0x1, 100));
-  TEST_ASSERT_EQUAL_HEX16(0, d.update(0x0, 102));   // bounce
+  TEST_ASSERT_EQUAL_HEX16(0, d.update(0x0, 102));  // bounce
   TEST_ASSERT_EQUAL_HEX16(0, d.update(0x1, 103));
   TEST_ASSERT_EQUAL_HEX16(0, d.update(0x1, 107));
-  TEST_ASSERT_EQUAL_HEX16(1, d.update(0x1, 108));   // stable for 5 ms
+  TEST_ASSERT_EQUAL_HEX16(1, d.update(0x1, 108));  // stable for 5 ms
 }
 
 static void test_watchdog_trips_once_and_needs_fresh_heartbeat() {
   HeartbeatWatchdog w;
   w.configure(500);
-  TEST_ASSERT_FALSE(w.update(5000));                // not armed before the first heartbeat
+  TEST_ASSERT_FALSE(w.update(5000));  // not armed before the first heartbeat
   w.beat(0);
   TEST_ASSERT_FALSE(w.update(400));
   TEST_ASSERT_TRUE(w.update(501));
-  TEST_ASSERT_FALSE(w.update(600));                 // edge only once
+  TEST_ASSERT_FALSE(w.update(600));  // edge only once
   TEST_ASSERT_TRUE(w.tripped());
-  TEST_ASSERT_FALSE(w.reset(700));                  // no fresh heartbeat
+  TEST_ASSERT_FALSE(w.reset(700));  // no fresh heartbeat
   w.beat(710);
   TEST_ASSERT_TRUE(w.reset(720));
   TEST_ASSERT_FALSE(w.tripped());
@@ -60,7 +60,7 @@ static void test_motion_interlocks() {
   MachineView m = ok_view();
   TEST_ASSERT_EQUAL(0, checkMotion(m));
   m.inputs &= ~(1u << IN_KNIFE_RETRACTED);
-  TEST_ASSERT_EQUAL(3, checkMotion(m));             // interlock
+  TEST_ASSERT_EQUAL(3, checkMotion(m));  // interlock
   m.knife_interlock = false;
   TEST_ASSERT_EQUAL(0, checkMotion(m));
   m = ok_view();

@@ -8,7 +8,7 @@ static const uint8_t NAK_INTERLOCK = 3, NAK_FAULT = 4, NAK_DISABLED = 6, NAK_PAR
 uint16_t Debouncer::update(uint16_t raw, uint32_t now_ms) {
   for (uint8_t i = 0; i < 16; ++i) {
     const uint16_t m = static_cast<uint16_t>(1u << i);
-    if ((raw & m) != (candidate_ & m)) {       // new candidate level
+    if ((raw & m) != (candidate_ & m)) {  // new candidate level
       candidate_ = static_cast<uint16_t>((candidate_ & ~m) | (raw & m));
       since_[i] = now_ms;
     }
@@ -62,7 +62,7 @@ uint8_t checkMotion(const MachineView& m) {
 
 uint8_t checkOutput(const MachineView& m, uint8_t out, bool value) {
   if (out >= OUT_COUNT) return NAK_PARAM;
-  if (!value) return 0;                                    // switching off is always allowed
+  if (!value) return 0;  // switching off is always allowed
   if (m.faults & (F_HEARTBEAT_LOST | F_ESTOP)) {
     const bool allowed = out == OUT_KNIFE_RETRACT || out == OUT_LIGHT_RED ||
                          out == OUT_LIGHT_YELLOW || out == OUT_BUZZER;
@@ -70,8 +70,8 @@ uint8_t checkOutput(const MachineView& m, uint8_t out, bool value) {
   }
   if (out == OUT_KNIFE_EXTEND && m.moving) return NAK_INTERLOCK;
   if (out >= OUT_LASER_0 && out <= OUT_LASER_3 && !hasBit(m.inputs, IN_DOOR_CLOSED)) {
-    return NAK_INTERLOCK;                                  // the enclosure interlock is
-  }                                                        // hardwired too; this is extra
+    return NAK_INTERLOCK;  // the enclosure interlock is
+  }  // hardwired too; this is extra
   return 0;
 }
 

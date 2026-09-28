@@ -25,8 +25,8 @@ static HeartbeatWatchdog watchdog;
 static PulseTimers pulses;
 static Dedup dedup;
 
-static uint16_t outputs = 0;          // logical output state (OutputBit)
-static uint16_t faults = 0;           // FaultBit
+static uint16_t outputs = 0;  // logical output state (OutputBit)
+static uint16_t faults = 0;   // FaultBit
 static uint16_t invert_mask = DEFAULT_INPUT_INVERT_MASK;
 static bool knife_interlock = DEFAULT_KNIFE_INTERLOCK;
 static bool enabled = false;
@@ -43,8 +43,10 @@ static void writeOutput(uint8_t out, bool on) {
   if (out >= OUT_COUNT) return;
   const bool active_low = (OUTPUT_ACTIVE_LOW_MASK >> out) & 1u;
   digitalWrite(OUTPUT_PINS[out], (on != active_low) ? HIGH : LOW);
-  if (on) outputs |= (1u << out);
-  else outputs &= ~(1u << out);
+  if (on)
+    outputs |= (1u << out);
+  else
+    outputs &= ~(1u << out);
 }
 
 static void setEnable(bool on) {
@@ -54,7 +56,7 @@ static void setEnable(bool on) {
 
 static void quickStop() {
   jogging = false;
-  stepper.setCurrentPosition(stepper.currentPosition());   // speed -> 0, target = here
+  stepper.setCurrentPosition(stepper.currentPosition());  // speed -> 0, target = here
 }
 
 static void safeState() {
@@ -70,7 +72,7 @@ static void safeState() {
 static void sendFrame(uint8_t id, uint8_t seq, const uint8_t* payload, uint8_t len) {
   uint8_t buf[proto::MAX_PAYLOAD + 7];
   size_t n = proto::encode(id, seq, payload, len, buf);
-  if (Serial.availableForWrite() < static_cast<int>(n)) return;   // never block the loop
+  if (Serial.availableForWrite() < static_cast<int>(n)) return;  // never block the loop
   Serial.write(buf, n);
 }
 
@@ -100,8 +102,15 @@ static void sendStatus() {
   int32_t enc = encoder_count;
   interrupts();
   proto::Writer w(p);
-  w.u32(millis()).i32(stepper.currentPosition()).f32(stepper.speed()).u16(motion_id)
-      .u8(flags).u16(debouncer.state()).u16(outs).u16(faults).i32(enc);
+  w.u32(millis())
+      .i32(stepper.currentPosition())
+      .f32(stepper.speed())
+      .u16(motion_id)
+      .u8(flags)
+      .u16(debouncer.state())
+      .u16(outs)
+      .u16(faults)
+      .i32(enc);
   sendFrame(proto::STATUS, 0, p, w.size());
 }
 
@@ -121,11 +130,23 @@ static MachineView view() {
 // ------------------------------------------------------------------ command handling
 static void handleFrame(const proto::Frame& f) {
   const int expected = proto::expectedLength(f.id);
-  if (expected < 0) { sendNak(f.seq, f.id, proto::NAK_UNKNOWN); return; }
-  if (expected != f.len) { sendNak(f.seq, f.id, proto::NAK_LENGTH); return; }
+  if (expected < 0) {
+    sendNak(f.seq, f.id, proto::NAK_UNKNOWN);
+    return;
+  }
+  if (expected != f.len) {
+    sendNak(f.seq, f.id, proto::NAK_LENGTH);
+    return;
+  }
   const uint32_t now = millis();
-  if (f.id == proto::HEARTBEAT) { watchdog.beat(now); return; }     // no ACK
-  if (dedup.isDuplicate(f.seq, f.id)) { sendAck(f.seq, f.id); return; }
+  if (f.id == proto::HEARTBEAT) {
+    watchdog.beat(now);
+    return;
+  }  // no ACK
+  if (dedup.isDuplicate(f.seq, f.id)) {
+    sendAck(f.seq, f.id);
+    return;
+  }
   dedup.remember(f.seq, f.id);
 
   proto::Reader r(f.payload, f.len);
@@ -140,7 +161,10 @@ static void handleFrame(const proto::Frame& f) {
       uint16_t mid = r.u16();
       nak = checkMotion(view());
       if (!nak && isMoving()) nak = proto::NAK_BUSY;
-      if (nak) { if (nak == proto::NAK_INTERLOCK) faults |= F_INTERLOCK_REJECT; break; }
+      if (nak) {
+        if (nak == proto::NAK_INTERLOCK) faults |= F_INTERLOCK_REJECT;
+        break;
+      }
       stepper.setMaxSpeed(speed > 0 ? min(speed, max_speed) : max_speed);
       stepper.setAcceleration(accel > 0 ? accel : DEFAULT_ACCEL_STEPS_S2);
       stepper.move(steps);
@@ -163,18 +187,28 @@ static void handleFrame(const proto::Frame& f) {
       break;
     }
     case proto::STOP:
-      if (r.u8()) quickStop();
-      else { jogging = false; stepper.stop(); }
+      if (r.u8())
+        quickStop();
+      else {
+        jogging = false;
+        stepper.stop();
+      }
       break;
     case proto::ENABLE: {
       bool on = r.u8();
-      if (on && !hasBit(debouncer.state(), IN_SAFETY_RELAY_OK)) { nak = proto::NAK_FAULT; break; }
+      if (on && !hasBit(debouncer.state(), IN_SAFETY_RELAY_OK)) {
+        nak = proto::NAK_FAULT;
+        break;
+      }
       setEnable(on);
       if (!on) quickStop();
       break;
     }
     case proto::ZERO:
-      if (isMoving()) { nak = proto::NAK_BUSY; break; }
+      if (isMoving()) {
+        nak = proto::NAK_BUSY;
+        break;
+      }
       stepper.setCurrentPosition(0);
       noInterrupts();
       encoder_count = 0;
@@ -186,42 +220,55 @@ static void handleFrame(const proto::Frame& f) {
       uint16_t val = (f.id == proto::SET_OUTPUT) ? r.u8() : r.u16();
       bool on = val != 0;
       nak = checkOutput(view(), out, on);
-      if (nak) { if (nak == proto::NAK_INTERLOCK) faults |= F_INTERLOCK_REJECT; break; }
+      if (nak) {
+        if (nak == proto::NAK_INTERLOCK) faults |= F_INTERLOCK_REJECT;
+        break;
+      }
       if (out == OUT_KNIFE_EXTEND && on) writeOutput(OUT_KNIFE_RETRACT, false);
       if (out == OUT_KNIFE_RETRACT && on) writeOutput(OUT_KNIFE_EXTEND, false);
       writeOutput(out, on);
-      if (f.id == proto::PULSE_OUTPUT) pulses.start(out, now, val);
-      else pulses.cancel(out);
+      if (f.id == proto::PULSE_OUTPUT)
+        pulses.start(out, now, val);
+      else
+        pulses.cancel(out);
       break;
     }
     case proto::SET_CONFIG: {
       uint8_t key = r.u8();
       float v = r.f32();
-      if (key == proto::CFG_HEARTBEAT_TIMEOUT_MS) watchdog.configure(static_cast<uint16_t>(v));
-      else if (key == proto::CFG_DEBOUNCE_MS) debouncer.configure(static_cast<uint16_t>(v));
-      else if (key == proto::CFG_INPUT_INVERT_MASK) invert_mask = static_cast<uint16_t>(v);
-      else if (key == proto::CFG_KNIFE_INTERLOCK) knife_interlock = v != 0.0f;
+      if (key == proto::CFG_HEARTBEAT_TIMEOUT_MS)
+        watchdog.configure(static_cast<uint16_t>(v));
+      else if (key == proto::CFG_DEBOUNCE_MS)
+        debouncer.configure(static_cast<uint16_t>(v));
+      else if (key == proto::CFG_INPUT_INVERT_MASK)
+        invert_mask = static_cast<uint16_t>(v);
+      else if (key == proto::CFG_KNIFE_INTERLOCK)
+        knife_interlock = v != 0.0f;
       else if (key == proto::CFG_MAX_SPEED_STEPS_S)
         max_speed = min(v, DEFAULT_MAX_SPEED_STEPS_S);
-      else nak = proto::NAK_PARAM;
+      else
+        nak = proto::NAK_PARAM;
       break;
     }
     case proto::RESET_FAULTS:
-      if (!watchdog.reset(now)) { nak = proto::NAK_FAULT; break; }
+      if (!watchdog.reset(now)) {
+        nak = proto::NAK_FAULT;
+        break;
+      }
       faults &= ~(F_HEARTBEAT_LOST | F_INTERLOCK_REJECT | F_WDT_RESET | F_RX_OVERFLOW);
       writeOutput(OUT_LIGHT_RED, false);
       break;
     default:
       nak = proto::NAK_UNKNOWN;
   }
-  if (nak) sendNak(f.seq, f.id, nak);
-  else sendAck(f.seq, f.id);
+  if (nak)
+    sendNak(f.seq, f.id, nak);
+  else
+    sendAck(f.seq, f.id);
 }
 
 // ------------------------------------------------------------------------ inputs
-static void encoderIsr() {
-  encoder_count += (digitalRead(PIN_ENCODER_B) == HIGH) ? 1 : -1;
-}
+static void encoderIsr() { encoder_count += (digitalRead(PIN_ENCODER_B) == HIGH) ? 1 : -1; }
 
 static uint16_t sampleInputs() {
   uint16_t raw = 0;
@@ -235,17 +282,26 @@ static uint16_t sampleInputs() {
 static void superviseInputs(uint32_t now) {
   const uint16_t in = debouncer.update(sampleInputs(), now);
   const bool estop = !hasBit(in, IN_ESTOP_OK);
-  if (estop && !(faults & F_ESTOP)) { safeState(); sendEvent(proto::EV_ESTOP, 0); }
+  if (estop && !(faults & F_ESTOP)) {
+    safeState();
+    sendEvent(proto::EV_ESTOP, 0);
+  }
   faults = estop ? (faults | F_ESTOP) : (faults & ~F_ESTOP);
   const bool alm = hasBit(in, IN_DRIVER_FAULT);
-  if (alm && !(faults & F_DRIVER_ALM)) { quickStop(); sendEvent(proto::EV_DRIVER_ALM, 0); }
+  if (alm && !(faults & F_DRIVER_ALM)) {
+    quickStop();
+    sendEvent(proto::EV_DRIVER_ALM, 0);
+  }
   faults = alm ? (faults | F_DRIVER_ALM) : (faults & ~F_DRIVER_ALM);
   const bool conflict = hasBit(in, IN_KNIFE_EXTENDED) && hasBit(in, IN_KNIFE_RETRACTED);
   faults = conflict ? (faults | F_KNIFE_SENSOR_CONFLICT) : (faults & ~F_KNIFE_SENSOR_CONFLICT);
-  if (!hasBit(in, IN_SAFETY_RELAY_OK) && enabled) setEnable(false);   // drive lost its power
-  if (!hasBit(in, IN_DOOR_CLOSED)) {                                   // never pedal with door open
+  if (!hasBit(in, IN_SAFETY_RELAY_OK) && enabled) setEnable(false);  // drive lost its power
+  if (!hasBit(in, IN_DOOR_CLOSED)) {                                 // never pedal with door open
     for (uint8_t o = OUT_LASER_0; o <= OUT_LASER_3; ++o) {
-      if (hasBit(outputs, o)) { writeOutput(o, false); pulses.cancel(o); }
+      if (hasBit(outputs, o)) {
+        writeOutput(o, false);
+        pulses.cancel(o);
+      }
     }
   }
 }
@@ -297,7 +353,7 @@ void loop() {
   // 2. motion
   if (jogging && static_cast<int32_t>(now - jog_until) >= 0) {
     jogging = false;
-    stepper.stop();                                         // decelerate
+    stepper.stop();  // decelerate
   }
   stepper.run();
 

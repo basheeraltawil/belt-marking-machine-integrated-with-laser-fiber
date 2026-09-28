@@ -6,18 +6,30 @@ namespace proto {
 
 int expectedLength(uint8_t id) {
   switch (id) {
-    case HEARTBEAT: return 4;
-    case GET_INFO: return 0;
-    case MOVE_REL: return 14;     // i32 steps, f32 speed, f32 accel, u16 motion id
-    case JOG: return 9;           // i8 dir, f32 speed, u16 duration ms, u16 motion id
-    case STOP: return 1;
-    case ENABLE: return 1;
-    case ZERO: return 0;
-    case SET_OUTPUT: return 2;
-    case PULSE_OUTPUT: return 3;
-    case SET_CONFIG: return 5;
-    case RESET_FAULTS: return 0;
-    default: return -1;
+    case HEARTBEAT:
+      return 4;
+    case GET_INFO:
+      return 0;
+    case MOVE_REL:
+      return 14;  // i32 steps, f32 speed, f32 accel, u16 motion id
+    case JOG:
+      return 9;  // i8 dir, f32 speed, u16 duration ms, u16 motion id
+    case STOP:
+      return 1;
+    case ENABLE:
+      return 1;
+    case ZERO:
+      return 0;
+    case SET_OUTPUT:
+      return 2;
+    case PULSE_OUTPUT:
+      return 3;
+    case SET_CONFIG:
+      return 5;
+    case RESET_FAULTS:
+      return 0;
+    default:
+      return -1;
   }
 }
 
@@ -54,7 +66,10 @@ bool Parser::feed(uint8_t b) {
       state_ = (b == SOF1) ? S_LEN : (b == SOF0 ? S_SOF1 : S_SOF0);
       return false;
     case S_LEN:
-      if (b > MAX_PAYLOAD) { state_ = S_SOF0; return false; }
+      if (b > MAX_PAYLOAD) {
+        state_ = S_SOF0;
+        return false;
+      }
       frame_.len = b;
       state_ = S_SEQ;
       return false;
