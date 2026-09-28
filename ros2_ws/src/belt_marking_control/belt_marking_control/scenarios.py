@@ -173,14 +173,14 @@ def s06_laser_timeout(r: ScenarioResult) -> None:
         h.set_laser_time(0.5)
         job = _job(job_id=f'S6-{option}', quantity=8, laser_time_s=0.5)
         h.start(job)
-        h.run_until(lambda: h.ctrl.run is not None and h.ctrl.run.marks_done >= 3, 120)
+        h.run_until(lambda h=h: h.ctrl.run is not None and h.ctrl.run.marks_done >= 3, 120)
         h.plant.inject('laser_late', True, value=30.0)
         r.check(f'[{option}] E-201 raised and machine HELD',
                 h.wait_state(State.HELD, 60) and CODES['LASER_TIMEOUT'] in h.codes_raised())
         timeout = 0.5 * 2 + 2.0
         r.check(f'[{option}] belt did not move while waiting', not h.plant.snapshot().moving)
         before = h.ctrl.run.marks_done
-        h.run_until(lambda: not h.plant.snapshot().laser_busy[0], 60)   # laser finishes late
+        h.run_until(lambda h=h: not h.plant.snapshot().laser_busy[0], 60)   # laser ends late
         r.check(f'[{option}] resume accepted', _operator_resume(h, option))
         r.check(f'[{option}] job completes', h.wait_state(State.COMPLETE, 300))
         run = h.ctrl.last_run

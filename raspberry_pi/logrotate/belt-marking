@@ -1,0 +1,9 @@
+/home/belt/.ros/log/*.log /home/belt/.ros/log/*/*.log {
+    daily
+    rotate 14
+    maxsize 20M
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

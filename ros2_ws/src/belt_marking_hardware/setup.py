@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sim_hardware_node = belt_marking_hardware.sim_hardware_node:main',
+            'serial_bridge_node = belt_marking_hardware.serial_bridge_node:main',
         ],
     },
 )

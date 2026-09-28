@@ -95,6 +95,7 @@ class FakePlant:
         self.faults: Dict[str, float] = {}
         self.latched = 0
         self.last_heartbeat = 0.0
+        self._hb_seen = False
         self.link_up = True
         # records for tests / twin / vision
         self.marks: List[PlantMark] = []
@@ -200,6 +201,7 @@ class FakePlant:
     def heartbeat(self) -> None:
         if self.link_up:
             self.last_heartbeat = self.t
+            self._hb_seen = True
 
     def cmd_move_rel(self, distance_mm: float, speed_mm_s: float = 0.0,
                      accel_mm_s2: float = 0.0, motion_id: int = 0) -> Tuple[bool, str]:
@@ -251,6 +253,9 @@ class FakePlant:
         if state and self._blocking_faults() & (FAULT_HEARTBEAT_LOST | FAULT_ESTOP):
             if name not in ('knife_retract', 'light_red', 'light_yellow', 'buzzer'):
                 return False, 'rejected: fault active'
+        if state and name.startswith('laser_') and not self.door_closed:
+            self.latched |= FAULT_INTERLOCK_REJECT
+            return False, 'interlock: laser door open'
         if state and name == 'knife_extend' and self.moving:
             self.latched |= FAULT_INTERLOCK_REJECT
             return False, 'interlock: knife extend while belt moving'
@@ -323,7 +328,7 @@ class FakePlant:
             self.step(dt)
 
     def _watchdog(self) -> None:
-        if self.t - self.last_heartbeat > self.cfg.watchdog_s and \
+        if self._hb_seen and self.t - self.last_heartbeat > self.cfg.watchdog_s and \
                 not self.latched & FAULT_HEARTBEAT_LOST:
             self.latched |= FAULT_HEARTBEAT_LOST
             self._safe_state()

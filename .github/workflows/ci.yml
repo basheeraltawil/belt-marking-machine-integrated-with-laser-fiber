@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+jobs:
+  ros:
+    name: ROS 2 Humble build + test (headless, fake hardware)
+    runs-on: ubuntu-22.04
+    container: ros:humble
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          apt-get update
+          rosdep update --rosdistro humble
+          rosdep install --from-paths ros2_ws/src --ignore-src -y --rosdistro humble
+          apt-get install -y python3-pytest python3-pyqt5 python3-opencv xvfb
+      - name: Build
+        working-directory: ros2_ws
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --event-handlers console_direct-
+      - name: Test (unit, 12 scenarios incl. 2 h soak, launch test, UI offscreen, lint)
+        working-directory: ros2_ws
+        env:
+          QT_QPA_PLATFORM: offscreen
+          SOAK_HOURS: '2'
+          ROS_LOCALHOST_ONLY: '1'
+        run: |
+          source install/setup.bash
+          colcon test --event-handlers console_direct- --return-code-on-test-failure
+          colcon test-result --verbose
+      - name: Scenario report
+        if: always()
+        working-directory: ros2_ws
+        run: |
+          source install/setup.bash
+          ros2 run belt_marking_control run_scenarios --hours 1 --json scenario_report.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            ros2_ws/build/*/pytest.xml
+            ros2_ws/scenario_report.json
+
+  firmware:
+    name: Arduino Mega firmware (PlatformIO)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('firmware/arduino_mega/platformio.ini') }}
+      - run: pip install platformio
+      - name: Native unit tests (protocol + logic)
+        working-directory: firmware/arduino_mega
+        run: pio test -e native
+      - name: Build for the Mega 2560
+        working-directory: firmware/arduino_mega
+        run: pio run -e megaatmega2560
+
+  lint:
+    name: Lint (ruff, clang-format)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff clang-format==18.1.8
+      - run: ruff check .
+      - run: |
+          clang-format --dry-run --Werror firmware/arduino_mega/src/*.cpp \
+            firmware/arduino_mega/lib/*/*.h firmware/arduino_mega/lib/*/*.cpp \
+            firmware/arduino_mega/include/*.h firmware/arduino_mega/test/*/*.cpp

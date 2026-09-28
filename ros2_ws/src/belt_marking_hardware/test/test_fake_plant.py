@@ -61,7 +61,7 @@ def test_knife_cycle_and_cut_record():
 def test_watchdog_trips_without_heartbeat():
     plant, hal = make()
     hal.move_relative(500, 10)
-    plant.run(1.0)                       # no heartbeat
+    plant.run(1.0)                       # no more heartbeats
     snap = plant.snapshot()
     assert snap.fault_flags & 1
     assert not snap.moving

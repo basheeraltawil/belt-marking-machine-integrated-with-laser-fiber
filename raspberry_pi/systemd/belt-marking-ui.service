@@ -1,0 +1,23 @@
+[Unit]
+Description=Belt marking machine - operator UI (kiosk on the touchscreen)
+After=belt-marking-ros.service systemd-user-sessions.service
+Wants=belt-marking-ros.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+User=belt
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+Environment=ROS_DOMAIN_ID=42
+Environment=ROS_LOCALHOST_ONLY=1
+Environment=QT_QPA_PLATFORM=wayland
+Environment=XDG_RUNTIME_DIR=/run/user/1001
+# cage = minimal Wayland kiosk compositor: one full-screen app, no desktop, no escape
+ExecStart=/bin/bash -lc 'source /opt/ros/humble/setup.bash && source /opt/belt_marking/ws/install/setup.bash && exec cage -d -- ros2 run belt_marking_ui operator_ui --ros-args -p kiosk:=true -p config_path:=/opt/belt_marking/ws/install/belt_marking_bringup/share/belt_marking_bringup/config/machine.yaml'
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical.target

@@ -71,8 +71,8 @@ class RosHardwareClient(HardwareInterface):
         except Exception as exc:  # noqa: BLE001 - report any transport error
             self._errors.append(f'hw/command failed: {exc}')
             return
-        if not res.accepted:
-            self._errors.append(res.message)
+        if not res.accepted and 'link down' not in res.message:
+            self._errors.append(res.message)      # link loss is reported as E-501 instead
 
     def move_relative(self, distance_mm, speed_mm_s=0.0, accel_mm_s2=0.0) -> int:
         mid = self._ids.next_id()

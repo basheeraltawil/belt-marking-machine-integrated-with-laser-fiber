@@ -1,0 +1,8 @@
+# Python lint for CI (ament_flake8 runs per package in colcon test as well)
+line-length = 99
+target-version = "py310"
+extend-exclude = ["legacy", "ros2_ws/build", "ros2_ws/install", "ros2_ws/log"]
+
+[lint]
+select = ["E", "F", "W", "B"]      # import order: ament_flake8 (google style)
+ignore = ["B008", "B905", "E402"]

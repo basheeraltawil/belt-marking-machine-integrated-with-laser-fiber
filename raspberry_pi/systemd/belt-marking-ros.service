@@ -1,0 +1,21 @@
+[Unit]
+Description=Belt marking machine - ROS 2 stack (serial bridge + control)
+After=network-online.target dev-belt_arduino.device
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=belt
+Group=belt
+Environment=ROS_DOMAIN_ID=42
+Environment=ROS_LOCALHOST_ONLY=1
+Environment=RCUTILS_LOGGING_BUFFERED_STREAM=1
+ExecStart=/bin/bash -lc 'source /opt/ros/humble/setup.bash && source /opt/belt_marking/ws/install/setup.bash && exec ros2 launch belt_marking_bringup real.launch.py ui:=false overlay:=/etc/belt_marking/site.yaml'
+Restart=always
+RestartSec=3
+# the firmware watchdog stops the machine within 0.5 s if this service dies
+KillSignal=SIGINT
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
