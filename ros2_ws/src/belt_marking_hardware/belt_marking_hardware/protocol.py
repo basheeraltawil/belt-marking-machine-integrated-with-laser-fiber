@@ -8,7 +8,7 @@ firmware/arduino_mega/lib/protocol/protocol.h.
 
 from dataclasses import dataclass
 import struct
-from typing import List, Optional
+from typing import List
 
 SOF = b'\xAA\x55'
 MAX_PAYLOAD = 64
@@ -164,7 +164,3 @@ def describe(frame: Frame) -> str:
 
 def nak_reason(code: int) -> str:
     return NAK_REASONS.get(code, f'reason {code}')
-
-
-def optional_int(value: Optional[int], default: int) -> int:
-    return default if value is None else int(value)
