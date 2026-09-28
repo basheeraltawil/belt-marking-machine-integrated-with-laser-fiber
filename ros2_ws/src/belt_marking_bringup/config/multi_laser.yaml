@@ -1,0 +1,9 @@
+# Overlay for a two-station line: loaded on top of machine.yaml by
+# multi_laser_sim.launch.py (only the keys below change).
+machine:
+  knife_offset_mm: 230.0           # knife after the second laser machine
+laser:
+  num_stations: 2
+  station_offsets_mm: [0.0, 150.0]
+  station_delays_s: [0.0, 0.3]
+  station_enabled: [true, true]

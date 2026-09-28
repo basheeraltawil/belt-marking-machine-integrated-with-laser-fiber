@@ -11,7 +11,7 @@
   <xacro:arg name="conveyor_length" default="0.90"/>
   <xacro:arg name="station_offsets" default="0.0"/>        <!-- metres, space separated -->
   <xacro:arg name="knife_offset" default="0.056"/>         <!-- legacy "metalw" = 56 mm -->
-  <xacro:arg name="camera_offset" default="0.030"/>
+  <xacro:arg name="camera_offset" default="0.032"/>
   <xacro:arg name="knife_stroke" default="0.12"/>
   <xacro:arg name="laser_field" default="0.05"/>
   <xacro:arg name="with_camera" default="true"/>
@@ -56,10 +56,10 @@
   <xacro:fixed_box name="guide_r" parent="bed" x="0" y="${-belt_w/2 - 0.004}" z="0.02"
                    sx="${bed_len}" sy="0.004" sz="0.01" material="dark" mass="0.3"/>
 
-  <!-- belt strip on the bed from the entrance to the knife (static visual; the moving
-       belt content - marks, cut pieces - is handled by gz_twin_node / RViz markers) -->
-  <xacro:fixed_box name="belt_strip" parent="base_link" x="${(x_min + knife_x)/2}" y="0"
-                   z="${belt_z - 0.002}" sx="${knife_x - x_min}" sy="${belt_w}" sz="0.002"
+  <!-- belt strip on the bed (static visual). The moving belt content (laser marks, cut
+       pieces) is spawned and moved by gz_twin_node in Gazebo and by rviz_markers_node. -->
+  <xacro:fixed_box name="belt_strip" parent="base_link" x="${(x_min + x_max)/2}" y="0"
+                   z="${belt_z - 0.002}" sx="${x_max - x_min}" sy="${belt_w}" sz="0.002"
                    material="belt_black" mass="0.05" collision="false"/>
 
   <!-- supply reel -->
@@ -113,7 +113,7 @@
     </link>
     <joint name="qa_camera_joint" type="fixed">
       <parent link="base_link"/><child link="qa_camera_link"/>
-      <origin xyz="${cam_x} ${-0.035} ${belt_z + 0.09}" rpy="0 ${pi/2} 0"/>
+      <origin xyz="${cam_x} 0 ${belt_z + 0.08}" rpy="0 ${pi/2} 0"/>
     </joint>
     <link name="qa_camera_optical_frame"/>
     <joint name="qa_camera_optical_joint" type="fixed">

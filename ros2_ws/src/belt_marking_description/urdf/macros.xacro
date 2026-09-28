@@ -119,7 +119,7 @@
       <limit lower="${-field/2}" upper="${field/2}" effort="50" velocity="1.0"/>
     </joint>
     <!-- beam (96 mm): hidden inside the head at 0, bottom touches the belt at 0.13 -->
-    <link name="laser_${idx}_beam">
+    <link name="laser_${idx}_beam_link">
       <visual>
         <origin xyz="0 0 -0.048"/>
         <geometry><cylinder radius="0.0015" length="0.096"/></geometry>
@@ -129,7 +129,7 @@
     </link>
     <joint name="laser_${idx}_beam" type="prismatic">
       <parent link="laser_${idx}_head"/>
-      <child link="laser_${idx}_beam"/>
+      <child link="laser_${idx}_beam_link"/>
       <origin xyz="0 0 0.06"/>
       <axis xyz="0 0 -1"/>
       <limit lower="0" upper="0.13" effort="10" velocity="5.0"/>
