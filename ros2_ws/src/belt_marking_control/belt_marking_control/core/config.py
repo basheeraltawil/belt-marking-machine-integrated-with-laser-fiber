@@ -28,6 +28,7 @@ class MachineSection:
     consecutive_reject_limit: int = 3
     settle_default_s: float = 0.1
     drive_release_s: float = 60.0            # release the stepper after this idle time
+    startup_grace_s: float = 5.0             # no link alarm until the first status (boot)
 
 
 @dataclass

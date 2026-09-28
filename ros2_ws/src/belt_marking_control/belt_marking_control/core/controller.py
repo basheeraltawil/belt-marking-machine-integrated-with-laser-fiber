@@ -152,6 +152,8 @@ class MachineController:
         self._pending_unhold_option = ''
         self._blade_warned = False
         self._slip_baseline = 0.0
+        self._link_seen = False
+        self._t_boot = now
         # callbacks (ROS node / DB / tests)
         self.on_event: Optional[Callable[[dict], None]] = None
         self.on_alarm: Optional[Callable[[AlarmInstance, str], None]] = None
@@ -362,6 +364,10 @@ class MachineController:
     # ------------------------------------------------------------------ monitors
     def _monitor(self) -> None:
         s, a, now, m = self.snap, self.alarms, self.now, self.cfg.machine
+        if s.link_ok:
+            self._link_seen = True
+        elif not self._link_seen and now - self._t_boot < m.startup_grace_s:
+            return   # hardware layer still starting: no alarm yet
         a.condition(CODES['SERIAL_LINK_LOST'], not s.link_ok, now)
         if not s.link_ok:
             return   # other inputs are stale

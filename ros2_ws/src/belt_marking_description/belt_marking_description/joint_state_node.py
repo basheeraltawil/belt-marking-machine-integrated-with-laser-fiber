@@ -10,6 +10,7 @@ import math
 from belt_marking_interfaces.msg import IoStatus
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 
 
@@ -68,7 +69,8 @@ class JointStateNode(Node):
         self.ejector_angle = 0.0
         self.busy_since = [None] * self.n
         self.pub = self.create_publisher(JointState, 'joint_states', 10)
-        self.create_subscription(IoStatus, 'hw/io_status', self._on_io, 10)
+        self.create_subscription(IoStatus, 'hw/io_status', self._on_io,
+                                 qos_profile_sensor_data)
         self.dt = 1.0 / gp('rate_hz').value
         self.create_timer(self.dt, self._tick)
 

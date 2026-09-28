@@ -159,7 +159,9 @@ def job_to_msg(job: Job, msg_type, station_type, target: Optional[object] = None
     for name in ('job_id', 'recipe', 'belt_width_mm', 'pitch_mm', 'mark_length_mm', 'lead_mm',
                  'laser_time_s', 'settle_s', 'post_mark_delay_s', 'feed_speed_mm_s',
                  'mark_text'):
-        setattr(msg, name, type(getattr(msg, name))(getattr(job, name)))
+        current = getattr(msg, name, None)
+        value = getattr(job, name)
+        setattr(msg, name, type(current)(value) if current is not None else value)
     msg.quantity = int(job.quantity)
     msg.cut_mode = int(job.cut_mode)
     msg.cut_every_n = int(job.cut_every_n)
