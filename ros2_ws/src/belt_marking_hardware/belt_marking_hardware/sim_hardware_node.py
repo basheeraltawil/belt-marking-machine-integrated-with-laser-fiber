@@ -77,6 +77,8 @@ class SimHardwareNode(Node):
             if prm.name == 'laser_marking_time_s':
                 for laser in self.plant.lasers:
                     laser.set_marking_time(float(prm.value))
+            elif prm.name == 'knife_stroke_time_s':      # e.g. worn seals (drift demo)
+                self.plant.cfg.knife_stroke_time_s = float(prm.value)
         return SetParametersResult(successful=True)
 
     def _physics(self):

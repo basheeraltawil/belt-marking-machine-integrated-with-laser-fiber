@@ -86,5 +86,9 @@ def build(cfg_path: str, overlays, use_sim: bool, gazebo: bool, rviz: bool, ui: 
                             parameters=[{'camera_offset_mm':
                                          float(cfg['geometry']['camera_offset_mm']),
                                          'synthetic': not gazebo,
+                                         'mark_length_mm':
+                                         float(cfg['geometry']['mark_length_mm']),
                                          'use_sim': use_sim}]))
+        actions.append(Node(package='belt_marking_vision', executable='anomaly_node',
+                            parameters=[{'db_path': cfg['control']['db_path']}]))
     return actions

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>belt_marking_vision</name>
+  <version>1.0.0</version>
+  <description>Optional AI modules (never in the safety path): vision QA, cycle-time anomaly detection, offline docs assistant, natural-language job entry.</description>
+  <maintainer email="basheeraltaweel@gmail.com">Basheer Al-Tawil</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>belt_marking_interfaces</depend>
+  <depend>belt_marking_control</depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
