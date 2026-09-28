@@ -62,7 +62,8 @@ class VisionQaNode(Node):
         p('window_mm', 4.0)              # capture while the mark centre is this close
         p('rotate_deg', 90)              # rotate frames so the belt runs along image x
         p('mm_per_px', 0.1)
-        p('min_contrast', 80.0)
+        p('min_contrast', 115.0)
+        p('roi_across', [0.0, 1.0])      # belt band in the (rotated) image, rows
         p('expected_text', '')           # fallback when the job has no mark_text
         p('use_sim', True)
         g = self.get_parameter
@@ -72,8 +73,9 @@ class VisionQaNode(Node):
         self.window = g('window_mm').value
         self.rotate = int(g('rotate_deg').value) % 360
         self.expected = g('expected_text').value
-        self.inspector = MarkInspector(InspectConfig(mm_per_px=g('mm_per_px').value,
-                                                     min_contrast=g('min_contrast').value))
+        self.inspector = MarkInspector(InspectConfig(
+            mm_per_px=g('mm_per_px').value, min_contrast=g('min_contrast').value,
+            roi_across=tuple(float(v) for v in g('roi_across').value)))
         self.state: Optional[MachineState] = None
         self.state_t = 0.0
         self.pending = deque(maxlen=50)
@@ -153,9 +155,13 @@ class VisionQaNode(Node):
         msg.stamp = self.get_clock().now().to_msg()
         self.pub.publish(msg)
         self.stats['ok' if r.ok else 'reject'] += 1
-        if not r.ok:
-            self.get_logger().warn(f'label {label} rejected: {r.reason} '
-                                   f'(contrast {r.contrast}, offset {r.offset_mm} mm)')
+        text = (f'label {label} {"OK" if r.ok else "rejected: " + r.reason} '
+                f'(contrast {r.contrast}, offset {r.offset_mm} mm, score {r.score})')
+        # separate call sites: rclpy forbids changing the severity of one call site
+        if r.ok:
+            self.get_logger().info(text)
+        else:
+            self.get_logger().warn(text)
 
 
 def main(args=None):

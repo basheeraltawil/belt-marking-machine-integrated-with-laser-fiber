@@ -37,9 +37,19 @@ flowchart LR
 * **Calibration on the machine**: `mm_per_px` from a label of known length; `min_contrast`
   halfway between good marks and deliberately weak marks (reduced laser power).
 
-Verified: unit tests on synthetic good / weak / missing / offset labels and 60 label
-texts without a false reject. Live in simulation: with `laser_weak_mark` injected, three
-consecutive `low_contrast` rejects → E-602 HOLD.
+* `roi_across` limits the analysis to the belt band of the image (without it the bright
+  surroundings distort the belt level). `min_contrast` default 115 grey levels.
+
+Verified:
+* unit tests on synthetic good / weak / missing / offset labels, and 60 label texts without a false reject;
+* simulation without Gazebo (synthetic mode): `laser_weak_mark` → three consecutive
+  `low_contrast` rejects → E-602 HOLD;
+* **Gazebo QA camera** (camera mode): good marks contrast 150 → OK (offset 0.2–1.7 mm);
+  weak marks contrast 87 → rejected, W-601 raised by the controller.
+
+Limitation: in continuous mode the last labels of a job stop between the laser and the
+camera and are not inspected. They are inspected when the next job moves them past.
+The same applies to a camera placed further downstream.
 
 ## 2. Anomaly detection / predictive maintenance
 

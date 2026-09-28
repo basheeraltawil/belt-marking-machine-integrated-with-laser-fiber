@@ -86,6 +86,8 @@ def build(cfg_path: str, overlays, use_sim: bool, gazebo: bool, rviz: bool, ui: 
                             parameters=[{'camera_offset_mm':
                                          float(cfg['geometry']['camera_offset_mm']),
                                          'synthetic': not gazebo,
+                                         # Gazebo QA camera: belt band after rotation
+                                         'roi_across': [0.34, 0.66],
                                          'mark_length_mm':
                                          float(cfg['geometry']['mark_length_mm']),
                                          'use_sim': use_sim}]))
