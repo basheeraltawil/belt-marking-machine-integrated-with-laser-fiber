@@ -1,0 +1,7 @@
+# Fixed device name for the Arduino Mega: /dev/belt_arduino
+# Genuine Mega 2560 R3 (16U2)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", SYMLINK+="belt_arduino", MODE="0660", GROUP="dialout"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0010", SYMLINK+="belt_arduino", MODE="0660", GROUP="dialout"
+# Common clones (CH340). If several CH340 devices are connected, pin the board by serial:
+#   udevadm info -a -n /dev/ttyUSB0 | grep serial   ->  add ATTRS{serial}=="..."
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="belt_arduino", MODE="0660", GROUP="dialout"
