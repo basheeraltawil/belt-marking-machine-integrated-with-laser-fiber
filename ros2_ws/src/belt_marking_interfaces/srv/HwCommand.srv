@@ -1,0 +1,23 @@
+# Low-level command to the hardware layer (serial bridge or simulation).
+# Only belt_marking_control calls this. Both implementations must behave identically.
+uint8 STOP=0            # value: 1 = quick stop, 0 = decelerate
+uint8 MOVE_REL=1        # value: distance mm, speed mm/s (0 = default), accel mm/s2 (0 = default)
+uint8 JOG=2             # value: +1/-1 direction, speed mm/s; runs until STOP or 'duration_ms'
+uint8 SET_OUTPUT=3      # output: name, state
+uint8 PULSE_OUTPUT=4    # output: name, duration_ms
+uint8 ENABLE_DRIVE=5    # state
+uint8 ZERO_POSITION=6
+uint8 RESET_FAULTS=7
+
+uint8 command
+uint16 motion_id        # MOVE_REL / JOG: id echoed back in IoStatus.motion_id
+float64 value
+float64 speed
+float64 accel
+string output           # knife_extend, knife_retract, zair, dc_motor, laser_0..laser_3,
+                        # light_red, light_yellow, light_green, buzzer
+bool state
+uint32 duration_ms
+---
+bool accepted
+string message

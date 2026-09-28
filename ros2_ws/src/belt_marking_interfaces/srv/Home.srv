@@ -1,0 +1,4 @@
+# Reference the belt position. Without a home sensor this zeroes the position counter.
+---
+bool accepted
+string message

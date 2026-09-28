@@ -1,0 +1,190 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===== materials ===== -->
+  <material name="frame_grey"><color rgba="0.62 0.64 0.66 1"/></material>
+  <material name="dark"><color rgba="0.15 0.15 0.17 1"/></material>
+  <material name="belt_black"><color rgba="0.08 0.08 0.08 1"/></material>
+  <material name="roller"><color rgba="0.75 0.75 0.78 1"/></material>
+  <material name="laser_body"><color rgba="0.93 0.93 0.95 1"/></material>
+  <material name="laser_yellow"><color rgba="0.98 0.80 0.10 1"/></material>
+  <material name="knife_blue"><color rgba="0.15 0.35 0.75 1"/></material>
+  <material name="blade"><color rgba="0.85 0.85 0.90 1"/></material>
+  <material name="sensor_orange"><color rgba="1.0 0.5 0.05 1"/></material>
+  <material name="beam_red"><color rgba="1.0 0.05 0.05 0.8"/></material>
+  <material name="estop_red"><color rgba="0.85 0.0 0.0 1"/></material>
+  <material name="lt_red"><color rgba="0.8 0.0 0.0 1"/></material>
+  <material name="lt_yellow"><color rgba="0.9 0.8 0.0 1"/></material>
+  <material name="lt_green"><color rgba="0.0 0.7 0.0 1"/></material>
+  <material name="bin_green"><color rgba="0.20 0.45 0.25 1"/></material>
+
+  <!-- ===== helpers ===== -->
+  <xacro:macro name="box_inertia" params="m x y z">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
+               iyy="${m*(x*x+z*z)/12}" iyz="0" izz="${m*(x*x+y*y)/12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- fixed box link attached to a parent -->
+  <xacro:macro name="fixed_box" params="name parent x y z sx sy sz material mass:=1.0 collision:=true">
+    <link name="${name}">
+      <visual>
+        <geometry><box size="${sx} ${sy} ${sz}"/></geometry>
+        <material name="${material}"/>
+      </visual>
+      <xacro:if value="${collision}">
+        <collision><geometry><box size="${sx} ${sy} ${sz}"/></geometry></collision>
+      </xacro:if>
+      <xacro:box_inertia m="${mass}" x="${sx}" y="${sy}" z="${sz}"/>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- roller across the belt (axis along y) -->
+  <xacro:macro name="roller" params="name parent x z diameter width joint_type:=continuous">
+    <link name="${name}">
+      <visual>
+        <origin rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${diameter/2}" length="${width}"/></geometry>
+        <material name="roller"/>
+      </visual>
+      <collision>
+        <origin rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${diameter/2}" length="${width}"/></geometry>
+      </collision>
+      <xacro:box_inertia m="0.5" x="${diameter}" y="${width}" z="${diameter}"/>
+    </link>
+    <joint name="${name}_joint" type="${joint_type}">
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+      <origin xyz="${x} 0 ${z}"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ===== CO2 laser marking machine (one station) =====
+       Enclosure over the belt with an X/Y gantry head and a beam link that drops out of
+       the head while the laser fires (visual only). -->
+  <xacro:macro name="laser_station" params="idx x belt_z field">
+    <xacro:property name="enc_x" value="0.09"/>
+    <xacro:property name="enc_y" value="0.42"/>
+    <xacro:property name="enc_h" value="0.30"/>
+
+    <!-- enclosure: two side housings + roof, leaving the belt tunnel free -->
+    <xacro:fixed_box name="laser_${idx}_roof" parent="base_link" x="${x}" y="0" z="${belt_z + enc_h}"
+                     sx="${enc_x}" sy="${enc_y}" sz="0.04" material="laser_body" mass="5"/>
+    <xacro:fixed_box name="laser_${idx}_side_l" parent="base_link" x="${x}" y="${enc_y/2 - 0.03}"
+                     z="${belt_z + enc_h/2 - 0.04}" sx="${enc_x}" sy="0.06" sz="${enc_h}"
+                     material="laser_body" mass="5"/>
+    <xacro:fixed_box name="laser_${idx}_side_r" parent="base_link" x="${x}" y="${-enc_y/2 + 0.03}"
+                     z="${belt_z + enc_h/2 - 0.04}" sx="${enc_x}" sy="0.06" sz="${enc_h}"
+                     material="laser_body" mass="5"/>
+    <xacro:fixed_box name="laser_${idx}_label" parent="laser_${idx}_side_l" x="0" y="0.031" z="0.05"
+                     sx="0.06" sy="0.002" sz="0.05" material="laser_yellow" mass="0.05"
+                     collision="false"/>
+    <!-- gantry rail under the roof -->
+    <xacro:fixed_box name="laser_${idx}_rail" parent="laser_${idx}_roof" x="0" y="0" z="-0.05"
+                     sx="${field + 0.08}" sy="0.03" sz="0.03" material="dark" mass="0.5"
+                     collision="false"/>
+
+    <!-- head carriage X -->
+    <link name="laser_${idx}_carriage">
+      <visual><geometry><box size="0.05 0.06 0.03"/></geometry><material name="dark"/></visual>
+      <xacro:box_inertia m="0.2" x="0.05" y="0.06" z="0.03"/>
+    </link>
+    <joint name="laser_${idx}_head_x" type="prismatic">
+      <parent link="laser_${idx}_rail"/>
+      <child link="laser_${idx}_carriage"/>
+      <origin xyz="0 0 -0.03"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="${-field/2}" upper="${field/2}" effort="50" velocity="1.0"/>
+    </joint>
+    <!-- head Y: 140 mm tall galvo/nozzle body, bottom 100 mm above the belt -->
+    <link name="laser_${idx}_head">
+      <visual><geometry><cylinder radius="0.02" length="0.14"/></geometry>
+        <material name="laser_yellow"/></visual>
+      <xacro:box_inertia m="0.2" x="0.04" y="0.04" z="0.14"/>
+    </link>
+    <joint name="laser_${idx}_head_y" type="prismatic">
+      <parent link="laser_${idx}_carriage"/>
+      <child link="laser_${idx}_head"/>
+      <origin xyz="0 0 -0.05"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="${-field/2}" upper="${field/2}" effort="50" velocity="1.0"/>
+    </joint>
+    <!-- beam (96 mm): hidden inside the head at 0, bottom touches the belt at 0.13 -->
+    <link name="laser_${idx}_beam">
+      <visual>
+        <origin xyz="0 0 -0.048"/>
+        <geometry><cylinder radius="0.0015" length="0.096"/></geometry>
+        <material name="beam_red"/>
+      </visual>
+      <xacro:box_inertia m="0.01" x="0.003" y="0.003" z="0.096"/>
+    </link>
+    <joint name="laser_${idx}_beam" type="prismatic">
+      <parent link="laser_${idx}_head"/>
+      <child link="laser_${idx}_beam"/>
+      <origin xyz="0 0 0.06"/>
+      <axis xyz="0 0 -1"/>
+      <limit lower="0" upper="0.13" effort="10" velocity="5.0"/>
+    </joint>
+    <!-- laser done/busy "lamp" on the housing (visual) -->
+    <xacro:fixed_box name="laser_${idx}_lamp" parent="laser_${idx}_roof" x="${enc_x/2 - 0.02}"
+                     y="${enc_y/2 - 0.02}" z="0.03" sx="0.02" sy="0.02" sz="0.02"
+                     material="lt_green" mass="0.01" collision="false"/>
+  </xacro:macro>
+
+  <!-- recursive helper for N stations: offsets is a python list (metres) -->
+  <xacro:macro name="laser_stations" params="offsets idx belt_z field">
+    <xacro:if value="${idx &lt; len(offsets)}">
+      <xacro:laser_station idx="${idx}" x="${offsets[idx]}" belt_z="${belt_z}" field="${field}"/>
+      <xacro:laser_stations offsets="${offsets}" idx="${idx + 1}" belt_z="${belt_z}" field="${field}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <!-- ===== knife station: double-acting cylinder traversing across the belt ===== -->
+  <xacro:macro name="knife_station" params="x belt_z stroke">
+    <xacro:property name="side_y" value="${stroke/2 + 0.07}"/>
+    <!-- bridge over the belt carrying the cylinder -->
+    <xacro:fixed_box name="knife_bridge" parent="base_link" x="${x}" y="0" z="${belt_z + 0.06}"
+                     sx="0.03" sy="${stroke + 0.2}" sz="0.02" material="frame_grey" mass="1"/>
+    <xacro:fixed_box name="knife_cylinder" parent="knife_bridge" x="0" y="${side_y - 0.02}" z="0.03"
+                     sx="0.04" sy="${stroke + 0.06}" sz="0.04" material="knife_blue" mass="1"
+                     collision="false"/>
+    <!-- reed sensors at both ends of the cylinder -->
+    <xacro:fixed_box name="knife_sensor_retracted" parent="knife_cylinder" x="0.022"
+                     y="${stroke/2}" z="0" sx="0.006" sy="0.012" sz="0.01"
+                     material="sensor_orange" mass="0.01" collision="false"/>
+    <xacro:fixed_box name="knife_sensor_extended" parent="knife_cylinder" x="0.022"
+                     y="${-stroke/2}" z="0" sx="0.006" sy="0.012" sz="0.01"
+                     material="sensor_orange" mass="0.01" collision="false"/>
+    <!-- carriage + blade: joint 0 = retracted (outside the belt), stroke = extended -->
+    <link name="knife_blade">
+      <visual>
+        <origin xyz="0 0 -0.035"/>
+        <geometry><box size="0.002 0.03 0.05"/></geometry>
+        <material name="blade"/>
+      </visual>
+      <visual>
+        <origin xyz="0 0 0.0"/>
+        <geometry><box size="0.03 0.04 0.02"/></geometry>
+        <material name="dark"/>
+      </visual>
+      <xacro:box_inertia m="0.1" x="0.03" y="0.04" z="0.07"/>
+    </link>
+    <joint name="knife_joint" type="prismatic">
+      <parent link="knife_bridge"/>
+      <child link="knife_blade"/>
+      <origin xyz="0 ${stroke/2 + 0.02} -0.015"/>
+      <axis xyz="0 -1 0"/>
+      <limit lower="0" upper="${stroke}" effort="200" velocity="1.0"/>
+    </joint>
+  </xacro:macro>
+
+</robot>

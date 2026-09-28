@@ -1,0 +1,5 @@
+uint16 code          # 0 = acknowledge all
+string user
+---
+bool accepted
+uint32 acknowledged_count

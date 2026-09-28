@@ -1,0 +1,11 @@
+# Simulation only: inject / clear a fault in the plant model.
+# fault: laser_no_response | laser_late | knife_stuck_extend | knife_stuck_retract |
+#        belt_runout | belt_slip | estop | door_open | low_air | driver_fault |
+#        link_loss | clear_all
+string fault
+bool enable
+float64 value        # e.g. extra seconds for laser_late, remaining mm for belt_runout, slip ratio
+uint32 station
+---
+bool accepted
+string message

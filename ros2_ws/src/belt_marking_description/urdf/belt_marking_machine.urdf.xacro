@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<!--
+  Belt marking machine: conveyor + CO2 laser station(s) + pneumatic knife + sensors.
+  Frame convention: x = belt travel direction, z = up, origin on the floor below the
+  mark origin of laser station 0. All dimensions in metres.
+  Dimensions not in the legacy CAD are estimates from the video (see docs/ASSUMPTIONS.md).
+-->
+<robot name="belt_marking_machine" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="belt_width" default="0.05"/>
+  <xacro:arg name="roller_diameter" default="0.04"/>
+  <xacro:arg name="conveyor_length" default="0.90"/>
+  <xacro:arg name="station_offsets" default="0.0"/>        <!-- metres, space separated -->
+  <xacro:arg name="knife_offset" default="0.056"/>         <!-- legacy "metalw" = 56 mm -->
+  <xacro:arg name="camera_offset" default="0.030"/>
+  <xacro:arg name="knife_stroke" default="0.12"/>
+  <xacro:arg name="laser_field" default="0.05"/>
+  <xacro:arg name="with_camera" default="true"/>
+  <xacro:arg name="gazebo" default="false"/>
+
+  <xacro:include filename="$(find belt_marking_description)/urdf/macros.xacro"/>
+
+  <xacro:property name="belt_w" value="$(arg belt_width)"/>
+  <xacro:property name="roller_d" value="$(arg roller_diameter)"/>
+  <xacro:property name="conv_len" value="$(arg conveyor_length)"/>
+  <xacro:property name="offsets" value="${[float(v) for v in '$(arg station_offsets)'.split()]}"/>
+  <xacro:property name="knife_x" value="$(arg knife_offset)"/>
+  <xacro:property name="cam_x" value="$(arg camera_offset)"/>
+  <xacro:property name="stroke" value="$(arg knife_stroke)"/>
+  <xacro:property name="field" value="$(arg laser_field)"/>
+  <xacro:property name="belt_z" value="0.30"/>          <!-- belt surface height -->
+  <xacro:property name="table_w" value="0.16"/>         <!-- conveyor bed width -->
+  <xacro:property name="last_station" value="${max(offsets)}"/>
+  <xacro:property name="x_min" value="-0.45"/>
+  <xacro:property name="x_max" value="${max(conv_len + x_min, max(last_station, knife_x) + 0.25)}"/>
+  <xacro:property name="bed_len" value="${x_max - x_min}"/>
+
+  <!-- ===== base ===== -->
+  <link name="world"/>
+  <link name="base_link"/>
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+
+  <!-- conveyor bed (top at belt_z - 0.004) and legs -->
+  <xacro:fixed_box name="bed" parent="base_link" x="${(x_min + x_max)/2}" y="0"
+                   z="${belt_z - 0.004 - 0.015}" sx="${bed_len}" sy="${table_w}" sz="0.03"
+                   material="frame_grey" mass="10"/>
+  <xacro:fixed_box name="leg_in" parent="base_link" x="${x_min + 0.05}" y="0" z="${(belt_z - 0.034)/2}"
+                   sx="0.05" sy="${table_w}" sz="${belt_z - 0.034}" material="dark" mass="3"/>
+  <xacro:fixed_box name="leg_out" parent="base_link" x="${x_max - 0.05}" y="0" z="${(belt_z - 0.034)/2}"
+                   sx="0.05" sy="${table_w}" sz="${belt_z - 0.034}" material="dark" mass="3"/>
+  <!-- belt guides (adjusted to belt width) -->
+  <xacro:fixed_box name="guide_l" parent="bed" x="0" y="${belt_w/2 + 0.004}" z="0.02"
+                   sx="${bed_len}" sy="0.004" sz="0.01" material="dark" mass="0.3"/>
+  <xacro:fixed_box name="guide_r" parent="bed" x="0" y="${-belt_w/2 - 0.004}" z="0.02"
+                   sx="${bed_len}" sy="0.004" sz="0.01" material="dark" mass="0.3"/>
+
+  <!-- belt strip on the bed from the entrance to the knife (static visual; the moving
+       belt content - marks, cut pieces - is handled by gz_twin_node / RViz markers) -->
+  <xacro:fixed_box name="belt_strip" parent="base_link" x="${(x_min + knife_x)/2}" y="0"
+                   z="${belt_z - 0.002}" sx="${knife_x - x_min}" sy="${belt_w}" sz="0.002"
+                   material="belt_black" mass="0.05" collision="false"/>
+
+  <!-- supply reel -->
+  <link name="supply_reel">
+    <visual><origin rpy="${pi/2} 0 0"/>
+      <geometry><cylinder radius="0.09" length="${belt_w + 0.01}"/></geometry>
+      <material name="belt_black"/></visual>
+    <xacro:box_inertia m="1" x="0.18" y="${belt_w}" z="0.18"/>
+  </link>
+  <joint name="supply_reel_joint" type="continuous">
+    <parent link="base_link"/><child link="supply_reel"/>
+    <origin xyz="${x_min - 0.12} 0 ${belt_z + 0.02}"/><axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- rollers: entry idler, stepper drive roller + pinch roller, DC ejector roller -->
+  <xacro:roller name="entry_roller" parent="base_link" x="${x_min + 0.03}"
+                z="${belt_z - roller_d/2}" diameter="${roller_d}" width="${table_w}"/>
+  <xacro:roller name="drive_roller" parent="base_link" x="-0.12"
+                z="${belt_z - roller_d/2}" diameter="${roller_d}" width="${table_w}"/>
+  <xacro:roller name="pinch_roller" parent="base_link" x="-0.12"
+                z="${belt_z + 0.012}" diameter="0.024" width="${table_w}"/>
+  <xacro:roller name="ejector_roller" parent="base_link" x="${knife_x + 0.09}"
+                z="${belt_z + 0.012}" diameter="0.024" width="${table_w}"/>
+  <!-- NEMA 23 on the drive roller -->
+  <xacro:fixed_box name="stepper_nema23" parent="base_link" x="-0.12" y="${-table_w/2 - 0.03}"
+                   z="${belt_z - roller_d/2}" sx="0.057" sy="0.056" sz="0.057"
+                   material="dark" mass="1.0"/>
+  <xacro:fixed_box name="dc_motor" parent="base_link" x="${knife_x + 0.09}"
+                   y="${-table_w/2 - 0.025}" z="${belt_z + 0.012}" sx="0.035" sy="0.04" sz="0.035"
+                   material="dark" mass="0.3"/>
+
+  <!-- Di-Soric fork light sensor at the entrance (belt passes through the fork) -->
+  <xacro:fixed_box name="fork_sensor" parent="base_link" x="${x_min + 0.10}" y="0"
+                   z="${belt_z + 0.01}" sx="0.02" sy="${belt_w + 0.03}" sz="0.012"
+                   material="sensor_orange" mass="0.05" collision="false"/>
+  <xacro:fixed_box name="fork_sensor_leg" parent="fork_sensor" x="0" y="${belt_w/2 + 0.012}"
+                   z="-0.015" sx="0.02" sy="0.006" sz="0.03" material="sensor_orange" mass="0.02"
+                   collision="false"/>
+
+  <!-- laser marking machines -->
+  <xacro:laser_stations offsets="${offsets}" idx="0" belt_z="${belt_z}" field="${field}"/>
+
+  <!-- knife station -->
+  <xacro:knife_station x="${knife_x}" belt_z="${belt_z}" stroke="${stroke}"/>
+
+  <!-- vision QA camera (looks straight down) -->
+  <xacro:if value="$(arg with_camera)">
+    <link name="qa_camera_link">
+      <visual><geometry><box size="0.02 0.03 0.02"/></geometry><material name="dark"/></visual>
+      <xacro:box_inertia m="0.05" x="0.02" y="0.03" z="0.02"/>
+    </link>
+    <joint name="qa_camera_joint" type="fixed">
+      <parent link="base_link"/><child link="qa_camera_link"/>
+      <origin xyz="${cam_x} ${-0.035} ${belt_z + 0.09}" rpy="0 ${pi/2} 0"/>
+    </joint>
+    <link name="qa_camera_optical_frame"/>
+    <joint name="qa_camera_optical_joint" type="fixed">
+      <parent link="qa_camera_link"/><child link="qa_camera_optical_frame"/>
+      <origin rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+  </xacro:if>
+
+  <!-- operator side: E-stop and light tower -->
+  <xacro:fixed_box name="estop_box" parent="base_link" x="${x_min + 0.12}" y="${table_w/2 + 0.04}"
+                   z="${belt_z + 0.02}" sx="0.07" sy="0.07" sz="0.07" material="laser_yellow"
+                   mass="0.3"/>
+  <link name="estop_button">
+    <visual><geometry><cylinder radius="0.02" length="0.02"/></geometry>
+      <material name="estop_red"/></visual>
+    <xacro:box_inertia m="0.02" x="0.04" y="0.04" z="0.02"/>
+  </link>
+  <joint name="estop_button_joint" type="fixed">
+    <parent link="estop_box"/><child link="estop_button"/><origin xyz="0 0 0.045"/>
+  </joint>
+  <xacro:fixed_box name="light_tower_pole" parent="base_link" x="${x_max - 0.05}"
+                   y="${table_w/2 + 0.02}" z="${belt_z + 0.10}" sx="0.015" sy="0.015" sz="0.2"
+                   material="dark" mass="0.2" collision="false"/>
+  <xacro:fixed_box name="light_tower_green" parent="light_tower_pole" x="0" y="0" z="0.115"
+                   sx="0.035" sy="0.035" sz="0.03" material="lt_green" mass="0.05" collision="false"/>
+  <xacro:fixed_box name="light_tower_yellow" parent="light_tower_pole" x="0" y="0" z="0.145"
+                   sx="0.035" sy="0.035" sz="0.03" material="lt_yellow" mass="0.05" collision="false"/>
+  <xacro:fixed_box name="light_tower_red" parent="light_tower_pole" x="0" y="0" z="0.175"
+                   sx="0.035" sy="0.035" sz="0.03" material="lt_red" mass="0.05" collision="false"/>
+
+  <!-- output bin below the conveyor end -->
+  <xacro:property name="bin_x" value="${x_max + 0.12}"/>
+  <xacro:fixed_box name="bin_floor" parent="base_link" x="${bin_x}" y="0" z="0.005"
+                   sx="0.24" sy="0.24" sz="0.01" material="bin_green" mass="1"/>
+  <xacro:fixed_box name="bin_wall_a" parent="bin_floor" x="0.12" y="0" z="0.05"
+                   sx="0.01" sy="0.24" sz="0.1" material="bin_green" mass="0.3"/>
+  <xacro:fixed_box name="bin_wall_b" parent="bin_floor" x="-0.12" y="0" z="0.05"
+                   sx="0.01" sy="0.24" sz="0.1" material="bin_green" mass="0.3"/>
+  <xacro:fixed_box name="bin_wall_c" parent="bin_floor" x="0" y="0.12" z="0.05"
+                   sx="0.24" sy="0.01" sz="0.1" material="bin_green" mass="0.3"/>
+  <xacro:fixed_box name="bin_wall_d" parent="bin_floor" x="0" y="-0.12" z="0.05"
+                   sx="0.24" sy="0.01" sz="0.1" material="bin_green" mass="0.3"/>
+  <!-- chute from the conveyor end into the bin -->
+  <link name="chute">
+    <visual><geometry><box size="0.2 ${table_w} 0.005"/></geometry>
+      <material name="frame_grey"/></visual>
+    <collision><geometry><box size="0.2 ${table_w} 0.005"/></geometry></collision>
+    <xacro:box_inertia m="0.5" x="0.2" y="${table_w}" z="0.005"/>
+  </link>
+  <joint name="chute_joint" type="fixed">
+    <parent link="base_link"/><child link="chute"/>
+    <origin xyz="${x_max + 0.07} 0 ${belt_z - 0.09}" rpy="0 0.75 0"/>
+  </joint>
+
+  <xacro:if value="$(arg gazebo)">
+    <xacro:include filename="$(find belt_marking_description)/urdf/gazebo.xacro"/>
+    <xacro:gazebo_extras n_stations="${len(offsets)}"/>
+  </xacro:if>
+</robot>

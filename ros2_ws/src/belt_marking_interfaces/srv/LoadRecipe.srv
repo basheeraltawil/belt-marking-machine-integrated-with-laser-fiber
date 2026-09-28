@@ -1,0 +1,5 @@
+string name
+---
+bool found
+JobSpec spec
+string message

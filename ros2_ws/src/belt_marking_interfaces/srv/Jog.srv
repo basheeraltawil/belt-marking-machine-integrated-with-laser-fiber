@@ -1,0 +1,7 @@
+# Manual belt move (MANUAL/MAINTENANCE mode, machine not executing).
+# The UI sends short chunks while the button is held (dead-man style).
+float64 distance_mm     # signed
+float64 speed_mm_s      # 0 = jog default
+---
+bool accepted
+string message

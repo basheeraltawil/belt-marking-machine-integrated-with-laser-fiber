@@ -1,0 +1,6 @@
+# One knife cycle (MANUAL/MAINTENANCE mode).
+---
+bool accepted
+string message
+float64 extend_time_s
+float64 retract_time_s

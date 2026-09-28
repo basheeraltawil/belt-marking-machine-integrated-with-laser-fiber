@@ -1,0 +1,5 @@
+uint8 mode          # MachineState.MODE_*
+string user
+---
+bool accepted
+string message
