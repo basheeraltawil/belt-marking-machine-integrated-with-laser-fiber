@@ -62,6 +62,7 @@ T = {
     'job.initial_trim_cut': ('Trim cut at start', 'Başta kırpma kesimi'),
     'job.mark_text': ('Expected text (QA)', 'Beklenen metin (QA)'),
     'job.piece_length': ('Piece length', 'Parça uzunluğu'),
+    'job.describe': ('Describe job…', 'İşi tarif et…'),
     'job.stations': ('Laser stations', 'Lazer istasyonları'),
     'cut.none': ('Continuous', 'Sürekli'),
     'cut.every': ('Every piece', 'Her parça'),

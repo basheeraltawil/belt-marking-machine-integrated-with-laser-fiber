@@ -21,12 +21,13 @@ import numpy as np
 @dataclass
 class InspectConfig:
     mm_per_px: float = 0.1            # camera scale (calibrate: known label length / px)
-    min_area_ratio: float = 0.01      # mark pixels / ROI pixels
+    min_area_ratio: float = 0.003     # mark pixels / ROI pixels
     detect_level: float = 25.0        # grey levels above the belt that count as 'marked'
-    min_contrast: float = 80.0        # grey levels between mark and belt (calibrate)
+    min_contrast: float = 115.0       # grey levels between mark and belt (calibrate)
     max_offset_mm: float = 2.0
     min_text_ratio: float = 0.7       # difflib ratio for OCR match
     light_marks: bool = True          # CO2 on dark belts: marks lighter than the belt
+    roi_across: tuple = (0.0, 1.0)    # image rows (fractions) covering the belt width
 
 
 @dataclass
@@ -61,7 +62,8 @@ class MarkInspector:
                 expected_center_px: Optional[float] = None) -> InspectResult:
         c = self.cfg
         gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        r0, r1 = (int(gray.shape[0] * f) for f in c.roi_across)
+        gray = cv2.GaussianBlur(gray[r0:max(r1, r0 + 1)], (3, 3), 0)
         belt_level = float(np.median(gray))
         # adaptive to the belt: pixels clearly brighter (or darker) than the belt
         diff = (gray.astype(np.int16) - belt_level) if c.light_marks else \
@@ -73,8 +75,10 @@ class MarkInspector:
             return InspectResult(False, 0.0, 'no_mark', 0.0, area_ratio)
         mark_level = float(np.median(gray[mask > 0]))
         contrast = abs(mark_level - belt_level)
-        m = cv2.moments(mask, binaryImage=True)
-        cx = m['m10'] / m['m00']
+        # centre of the marked area's bounding box (the ink centroid of text depends on
+        # the characters, e.g. '1' vs '8', and would fake a position error)
+        xs = np.nonzero(mask.any(axis=0))[0]
+        cx = (xs[0] + xs[-1]) / 2.0
         exp = expected_center_px if expected_center_px is not None else gray.shape[1] / 2
         offset_mm = (cx - exp) * c.mm_per_px
         text = ''
@@ -113,7 +117,8 @@ def render_label(text: str = 'BELT-2026', weak: bool = False, missing: bool = Fa
     img[int(h * 0.25):int(h * 0.75), :, :] = 30                 # label area
     if not missing:
         level = 90 if weak else 215
-        scale = 1.6
+        (tw, _), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 3)
+        scale = min(2.2, 0.6 * w / max(tw, 1))          # text fills ~60 % of the label
         (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, scale, 3)
         org = (int((w - tw) / 2) + offset_px, int((h + th) / 2))
         cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale, (level,) * 3, 3,

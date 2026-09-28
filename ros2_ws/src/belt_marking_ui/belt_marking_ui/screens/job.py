@@ -132,6 +132,9 @@ class JobScreen(QWidget):
         self.summary.setWordWrap(True)
         self.summary.setProperty('role', 'small')
         bottom.addWidget(self.summary, 3)
+        describe = big_button('✎ ' + tr('job.describe'))
+        describe.clicked.connect(self._describe)
+        bottom.addWidget(describe, 1)
         save = big_button(tr('btn.save') + ' ' + tr('nav.recipes'))
         save.clicked.connect(self._save_recipe)
         start = big_button(tr('btn.start'), 'start')
@@ -217,6 +220,22 @@ class JobScreen(QWidget):
             self.ctx.window.show_screen('production')
         else:
             self.ctx.message('RunJob action server not available', True)
+
+    def _describe(self):
+        """Natural-language job entry: fills the form, the operator checks and confirms."""
+        text, ok = QInputDialog.getText(self, tr('job.describe'),
+                                        'e.g. "200 pieces of 30 mm belt, cut each"')
+        if not ok or not text.strip():
+            return
+        try:
+            from belt_marking_vision.nl_job import parse_job_text
+        except ImportError:
+            self.ctx.message('belt_marking_vision not installed', True)
+            return
+        job, notes = parse_job_text(text, self.job)
+        self.load_job(job)
+        self.ctx.message(' · '.join(notes))
+        self.ctx.db.audit(self.ctx.user(), 'nl_job_entry', {'text': text, 'notes': notes})
 
     def _save_recipe(self):
         if not self.ctx.require('technician'):

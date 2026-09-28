@@ -266,6 +266,10 @@ class MachineController:
                               f'{run.consecutive_rejects} consecutive rejects')
             run.consecutive_rejects = 0
 
+    def maintenance_warning(self, text: str) -> None:
+        """Predictive-maintenance hint (anomaly detector): warning only, no reaction."""
+        self._event_alarm(CODES['CYCLE_DRIFT'], text)
+
     # ---------------------------------------------------------------- manual ops
     def _manual_allowed(self, allow_held: bool = False, maintenance_only: bool = False) -> tuple:
         if self.manual is not None and not self.manual.done:

@@ -23,6 +23,9 @@ Status legend: **L** = taken from legacy code (plausible, still verify) ·
 | A-08 | Belt width range | 10–100 mm | A | `machine.belt_width_min_mm`, `..._max_mm` |
 | A-09 | There is no home/reference sensor. Position is zeroed at job start | – | L | `hardware.has_home_sensor: false` |
 | A-10 | There is no encoder, so belt-slip detection is only active if an encoder is added | – | A | `hardware.encoder_enabled: false` |
+| A-11 | Fork sensor position | 350 mm upstream of station 0 | A (video) | `machine.fork_sensor_offset_mm` |
+| A-12 | Laser marking field along the belt | 50 mm | A | `laser.field_length_mm` |
+| A-13 | AccelStepper on the Mega is limited to about 4000 steps/s (≈ 58 mm/s at 69 steps/mm) | – | D | `DEFAULT_MAX_SPEED_STEPS_S` in `config.h` |
 
 ## Pneumatics
 
@@ -65,6 +68,8 @@ Status legend: **L** = taken from legacy code (plausible, still verify) ·
 
 ## Software / platform
 
+Status: **A** = assumption, **D** = design choice.
+
 | ID | Item | Value / decision |
 |---|---|---|
 | A-60 | LICENSE | The repository had no licence file. **MIT** was added, copyright Basheer Al-Tawil / AIBO Mechatronics. Change it if you prefer something else |
@@ -75,3 +80,8 @@ Status legend: **L** = taken from legacy code (plausible, still verify) ·
 | A-65 | The legacy firmware variant B (`makine_kodu/makine_kodu.ino`) is taken as the deployed version |
 | A-66 | The coolant/pump parts in the cabinet CAD are not part of the control scope |
 | A-67 | The video appears to show a galvo marking head. The owner states the laser is CO2, so the docs use CO2. The `LaserInterface` stays type-agnostic |
+| A-68 | Firmware watchdog arms at the first heartbeat. A board powered before the Pi does not latch a fault |
+| A-69 | `control_node` waits 5 s after start before raising E-501 (hardware layer still starting) | 
+| A-70 | Vision QA: camera 32 mm after station 0 (between laser and knife, inside the enclosure, with a laser-safe filter), `mm_per_px` 0.1, `min_contrast` 115 grey levels (from simulation measurements). **Calibrate on the machine** with good and deliberately weak marks |
+| A-71 | Drift detector defaults: baseline 100 cycles, window 30, z > 4 and > 15 % change |
+| A-72 | Label mark origin sits under station 0 at job start (the operator aligns the first label, as in 2019) |

@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /ws
 COPY ros2_ws/src /ws/src
+# belt_marking_vision/docs -> ../../../docs (installed for the offline assistant)
+COPY docs /docs
 RUN . /opt/ros/humble/setup.sh && \
     apt-get update && rosdep update --rosdistro humble && \
     rosdep install --from-paths src --ignore-src -y --rosdistro humble && \

@@ -46,7 +46,8 @@ usermod -aG dialout,video,input "$USER_NAME"
 
 echo "==> workspace -> $PREFIX/ws (only the packages needed on the machine)"
 mkdir -p "$PREFIX/ws/src"
-rsync -a --delete --exclude belt_marking_gazebo "$REPO/ros2_ws/src/" "$PREFIX/ws/src/"
+# -L: copy symlinked content (belt_marking_vision/docs -> repo docs/ for the assistant)
+rsync -aL --delete --exclude belt_marking_gazebo "$REPO/ros2_ws/src/" "$PREFIX/ws/src/"
 chown -R "$USER_NAME:$USER_NAME" "$PREFIX"
 sudo -u "$USER_NAME" bash -lc "source /opt/ros/humble/setup.bash && cd $PREFIX/ws && \
   colcon build --packages-skip belt_marking_gazebo --event-handlers console_cohesion+"

@@ -20,6 +20,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
 from .core import ControlConfig, MachineController, Mode, State
@@ -73,6 +74,8 @@ class ControlNode(Node):
         self.pub_alarm = self.create_publisher(Alarm, 'machine/alarms', 50)
         self.pub_event = self.create_publisher(ProcessEvent, 'machine/events', 100)
         self.create_subscription(QualityResult, 'quality/result', self._on_quality, 50,
+                                 callback_group=self.cb)
+        self.create_subscription(String, 'maintenance/drift', self._on_drift, 10,
                                  callback_group=self.cb)
 
         self.ctrl.on_event = self._on_event
@@ -190,6 +193,10 @@ class ControlNode(Node):
             run = self.ctrl.run
             if run is not None and msg.job_id == run.job.job_id:
                 self.ctrl.quality_result(msg.label_index, msg.ok, msg.reason)
+
+    def _on_drift(self, msg: String):
+        with self.lock:
+            self.ctrl.maintenance_warning(msg.data)
 
     def _save_counters(self):
         self.db.save_counters(self.ctrl.counters.as_dict())
