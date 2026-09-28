@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>belt_marking_gateway</name>
+  <version>1.0.0</version>
+  <description>Optional connectivity: MQTT publisher (state, counters, alarms, events) and OPC UA server (state, counters, guarded job start).</description>
+  <maintainer email="basheeraltaweel@gmail.com">Basheer Al-Tawil</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>belt_marking_interfaces</depend>
+  <exec_depend>python3-paho-mqtt</exec_depend>
+  <!-- asyncua: pip install asyncua (no rosdep key on Humble) -->
+
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
