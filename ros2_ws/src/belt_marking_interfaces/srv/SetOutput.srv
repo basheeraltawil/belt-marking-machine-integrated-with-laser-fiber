@@ -1,0 +1,6 @@
+# Force an auxiliary output (MAINTENANCE mode only): zair, dc_motor, light_*, buzzer.
+string output
+bool state
+---
+bool accepted
+string message

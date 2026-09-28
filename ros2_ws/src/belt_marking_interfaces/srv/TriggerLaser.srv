@@ -1,0 +1,7 @@
+# Trigger one laser station once (MANUAL/MAINTENANCE mode).
+uint32 station
+bool wait_done
+---
+bool accepted
+string message
+float64 busy_time_s

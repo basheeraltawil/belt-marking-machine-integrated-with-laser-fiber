@@ -1,0 +1,7 @@
+string name
+JobSpec spec
+bool overwrite
+string user
+---
+bool accepted
+string message

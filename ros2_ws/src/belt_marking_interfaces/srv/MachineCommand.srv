@@ -1,0 +1,14 @@
+# PackML state commands.
+uint8 RESET=0
+uint8 HOLD=1
+uint8 UNHOLD=2
+uint8 STOP=3
+uint8 ABORT=4
+uint8 CLEAR=5
+
+uint8 command
+string option       # UNHOLD after laser timeout: "retry" | "reject" ("" = config default)
+string user
+---
+bool accepted
+string message

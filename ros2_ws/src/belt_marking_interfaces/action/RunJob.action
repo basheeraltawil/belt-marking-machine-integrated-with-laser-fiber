@@ -1,0 +1,20 @@
+# Run one production job. Accepted only in IDLE, AUTO or SIMULATION mode.
+# Cancel = controlled STOP.
+JobSpec spec
+string user
+---
+bool success
+uint8 final_state          # MachineState.*
+uint32 marks_done
+uint32 pieces_cut
+uint32 rejects
+float64 duration_s
+string message
+---
+uint32 current_label
+uint32 marks_done
+uint32 marks_total
+uint32 pieces_cut
+float64 progress
+string phase
+uint8 state

@@ -1,0 +1,76 @@
+# =====================================================================================
+# Belt marking machine - single source of machine configuration.
+# Loaded by belt_marking_bringup launch files and mapped onto every node's parameters.
+# Items marked "TODO: verify on hardware" are listed in docs/ASSUMPTIONS.md.
+# =====================================================================================
+
+machine:
+  knife_offset_mm: 56.0            # laser station 0 -> knife (legacy "metalw")  # TODO: verify on hardware
+  fork_sensor_offset_mm: 350.0     # fork sensor upstream of station 0            # TODO: verify on hardware
+  belt_width_min_mm: 10.0          # TODO: verify on hardware
+  belt_width_max_mm: 100.0         # TODO: verify on hardware
+  pitch_min_mm: 5.0
+  pitch_max_mm: 2000.0
+  quantity_max: 100000
+  feed_speed_default_mm_s: 14.5    # legacy: 1000 steps/s / 69 steps/mm
+  feed_speed_max_mm_s: 60.0        # TODO: verify on hardware (no stall at max accel)
+  jog_speed_mm_s: 10.0
+  jog_max_mm: 500.0
+  motion_timeout_margin_s: 2.0
+  require_belt_present: true
+  require_door_closed: true
+  monitor_air_pressure: true       # needs a pressure switch (A-27)
+  encoder_enabled: false           # optional upgrade (A-10)
+  slip_tolerance_mm: 2.0
+  consecutive_reject_limit: 3
+  settle_default_s: 0.1
+  drive_release_s: 60.0
+  startup_grace_s: 5.0
+
+laser:
+  num_stations: 1
+  station_offsets_mm: [0.0]
+  station_delays_s: [0.0]
+  station_enabled: [true]
+  pulse_ms: 200                    # pedal contact closure                        # TODO: verify on hardware
+  done_mode: signal                # signal | timed                               # TODO: verify on hardware
+  ack_timeout_s: 1.0               # busy must rise within this time              # TODO: verify on hardware
+  timeout_factor: 2.0
+  timeout_margin_s: 2.0
+  timeout_recovery: reject         # default RESUME option after E-201/E-203: retry | reject
+  field_length_mm: 50.0            # usable marking field along the belt          # TODO: verify on hardware
+  marking_time_default_s: 3.0
+
+knife:
+  extend_timeout_s: 1.5            # TODO: verify on hardware
+  retract_timeout_s: 1.5           # TODO: verify on hardware
+  dwell_s: 0.1
+  hold_retract_energized: true     # legacy behaviour
+  ejector_enabled: true
+  eject_ms: 1000                   # legacy DC motor pulse
+  blade_life_cycles: 50000         # TODO: set from blade supplier data
+
+zair:
+  during_mark: true                # Z-Air energised while marking (A-25)
+
+hardware:
+  steps_per_mm: 69.0               # legacy value                                 # TODO: verify on hardware
+  accel_mm_s2: 100.0               # TODO: verify on hardware
+  port: /dev/belt_arduino          # udev symlink (raspberry_pi/udev)
+  baud: 115200
+  heartbeat_timeout_ms: 500        # firmware watchdog
+  status_timeout_s: 0.5            # Pi side: link lost after this
+
+sim:
+  laser_marking_time_s: 2.0        # duration of the design "loaded on the laser"
+  knife_stroke_time_s: 0.3
+  physics_hz: 200.0
+
+geometry:                          # visual model only
+  belt_width_mm: 25.0
+  camera_offset_mm: 32.0
+  mark_length_mm: 20.0
+
+control:
+  tick_hz: 100.0
+  db_path: ~/.belt_marking/belt_marking.db
