@@ -20,6 +20,11 @@ def test_inspector(kw, ok, reason):
     assert (r.ok, r.reason) == (ok, reason)
 
 
+@pytest.mark.parametrize('text', ['A-1', 'AI1-0', 'AI1-1', 'AI1-11', 'ORDER-2026-000123'])
+def test_short_and_long_texts_are_found(text):
+    assert MarkInspector(use_tesseract=False).inspect(render_label(text)).ok
+
+
 def test_inspector_text_check_with_injected_ocr():
     ins = MarkInspector(ocr=lambda img: 'BELT-2O26', use_tesseract=False)
     assert ins.inspect(render_label(), expected_text='BELT-2026').ok      # O vs 0 tolerated
