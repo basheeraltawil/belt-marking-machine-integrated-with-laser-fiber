@@ -23,8 +23,8 @@ Display: official 7" touchscreen (800×480) or any HDMI/USB touch panel. The UI 
 ## Steps
 
 ```bash
-git clone https://github.com/basheeraltawil/belt-marking-machine-integrated-with-laser-fiber.git
-cd belt-marking-machine-integrated-with-laser-fiber
+git clone https://github.com/basheeraltawil/ros2-laser-marking-machine.git
+cd ros2-laser-marking-machine
 sudo ./raspberry_pi/setup_pi.sh            # add --overlayroot for a read-only system
 sudo reboot
 ```

@@ -18,7 +18,7 @@ real-time I/O, and includes a **Gazebo** simulation of the whole process.
 
 > The laser in the installed machine is a **CO2** laser. It is used only through a
 > trigger input and a busy/done signal (`LaserInterface`), so a fiber or UV laser works the
-> same way. The repository name mentions "fiber" for historical reasons.
+> same way.
 
 ## What it does
 
@@ -104,8 +104,8 @@ Transitional states (RESETTING, STARTING, HOLDING, …) are in [docs/STATE_MACHI
 **Docker** (Linux with X11, no ROS install needed):
 
 ```bash
-git clone https://github.com/basheeraltawil/belt-marking-machine-integrated-with-laser-fiber.git
-cd belt-marking-machine-integrated-with-laser-fiber
+git clone https://github.com/basheeraltawil/ros2-laser-marking-machine.git
+cd ros2-laser-marking-machine
 xhost +local:docker
 docker compose -f docker/docker-compose.yml up --build sim       # Gazebo + RViz + UI
 ```
