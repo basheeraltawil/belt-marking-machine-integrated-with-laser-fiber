@@ -37,3 +37,8 @@ exports/
 .env
 *.pem
 *.key
+
+# trained models / datasets (reproduce with tools/yolo/train_mark_detector.py)
+*.onnx
+*.pt
+runs/

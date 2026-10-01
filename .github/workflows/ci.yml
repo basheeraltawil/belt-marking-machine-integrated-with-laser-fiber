@@ -78,8 +78,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install ruff clang-format==18.1.8
+      - run: pip install ruff clang-format==18.1.8 numpy matplotlib
       - run: ruff check .
+      - name: Engineering analysis scripts run
+        run: MPLBACKEND=Agg python analysis/run_all.py
       - run: |
           clang-format --dry-run --Werror firmware/arduino_mega/src/*.cpp \
             firmware/arduino_mega/lib/*/*.h firmware/arduino_mega/lib/*/*.cpp \

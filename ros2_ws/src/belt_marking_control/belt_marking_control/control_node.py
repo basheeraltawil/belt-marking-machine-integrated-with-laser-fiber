@@ -162,8 +162,12 @@ class ControlNode(Node):
         self.db.log_alarm(d.code, d.code_text, int(d.severity), event, d.text, a.detail,
                           a.acked_by)
         if event == 'raised':
-            log = self.get_logger().error if d.severity >= 2 else self.get_logger().warn
-            log(f'{d.code_text} {d.text} {a.detail}')
+            text = f'{d.code_text} {d.text} {a.detail}'
+            # one call site per severity: rclpy forbids changing it at the same call site
+            if d.severity >= 2:
+                self.get_logger().error(text)
+            else:
+                self.get_logger().warn(text)
 
     def _on_event(self, ev):
         msg = ProcessEvent(type=EVENT_TYPES[ev['type']], job_id=ev['job_id'],

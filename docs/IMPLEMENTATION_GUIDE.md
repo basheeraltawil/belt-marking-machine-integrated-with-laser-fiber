@@ -8,6 +8,15 @@ in `/etc/belt_marking/site.yaml` (overlay) and tick the items in
 > named below are **guidance for your own risk assessment, not a certification** of this
 > design.
 
+```mermaid
+flowchart TB
+  S1["1 Safety: risk assessment,<br/>hardwired E-stop / door / air"] --> S2["2 Mechanics: rollers,<br/>tracking, knife"]
+  S2 --> S3["3 Electrical: power, sensors,<br/>pedal dry contact"] --> S4["4 Pneumatics: regulator,<br/>dump valve, reeds"]
+  S4 --> S5["5 Firmware + I/O check<br/>serial_console.py"] --> S6["6 Raspberry Pi install<br/>setup_pi.sh"]
+  S6 --> S7["7 Calibration: steps/mm,<br/>mark and knife offsets"] --> S8["8 Laser: foot-switch mode,<br/>single trigger"]
+  S8 --> S9["9 Dry run → with laser<br/>→ first article"] --> S10["10 Site acceptance test<br/>(the 12 scenarios)"] --> S11["11 Training,<br/>spares, backup"]
+```
+
 ## 1. Safety first
 
 Risk assessment according to **ISO 12100**. Typical hazards and measures:

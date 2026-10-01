@@ -22,6 +22,7 @@ setup(
             'control_node = belt_marking_control.control_node:main',
             'rviz_markers_node = belt_marking_control.rviz_markers_node:main',
             'run_scenarios = belt_marking_control.scenarios:main',
+            'demo_scenario = belt_marking_control.demo:main',
         ],
     },
 )

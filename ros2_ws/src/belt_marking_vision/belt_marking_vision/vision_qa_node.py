@@ -64,6 +64,9 @@ class VisionQaNode(Node):
         p('mm_per_px', 0.1)
         p('min_contrast', 115.0)
         p('roi_across', [0.0, 1.0])      # belt band in the (rotated) image, rows
+        p('detector', 'classic')         # classic (OpenCV rules) | yolo (ONNX model)
+        p('yolo_model', '')              # path to the exported .onnx file
+        p('yolo_conf', 0.4)
         p('expected_text', '')           # fallback when the job has no mark_text
         p('use_sim', True)
         g = self.get_parameter
@@ -73,9 +76,15 @@ class VisionQaNode(Node):
         self.window = g('window_mm').value
         self.rotate = int(g('rotate_deg').value) % 360
         self.expected = g('expected_text').value
-        self.inspector = MarkInspector(InspectConfig(
-            mm_per_px=g('mm_per_px').value, min_contrast=g('min_contrast').value,
-            roi_across=tuple(float(v) for v in g('roi_across').value)))
+        if g('detector').value == 'yolo':
+            from .yolo_detector import YoloDetector, YoloInspector   # needs only OpenCV
+            self.inspector = YoloInspector(
+                YoloDetector(g('yolo_model').value, conf=g('yolo_conf').value),
+                mm_per_px=g('mm_per_px').value, min_contrast=g('min_contrast').value)
+        else:
+            self.inspector = MarkInspector(InspectConfig(
+                mm_per_px=g('mm_per_px').value, min_contrast=g('min_contrast').value,
+                roi_across=tuple(float(v) for v in g('roi_across').value)))
         self.state: Optional[MachineState] = None
         self.state_t = 0.0
         self.pending = deque(maxlen=50)
@@ -91,7 +100,8 @@ class VisionQaNode(Node):
         else:
             self.create_subscription(Image, g('image_topic').value, self._on_image,
                                      qos_profile_sensor_data)
-        self.get_logger().info(f'vision QA ({"synthetic" if self.synthetic else "camera"}), '
+        self.get_logger().info(f'vision QA ({"synthetic" if self.synthetic else "camera"}, '
+                               f'detector {g("detector").value}), '
                                f'camera at {self.cam_x} mm, OCR '
                                f'{"on" if self.inspector.ocr else "off (tesseract missing)"}')
 

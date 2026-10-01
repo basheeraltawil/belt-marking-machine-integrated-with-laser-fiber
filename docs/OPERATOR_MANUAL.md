@@ -2,6 +2,14 @@
 
 Touchscreen UI on the machine (800×480). Buttons are large and can be used with gloves.
 
+```mermaid
+flowchart LR
+  A["Log in<br/>(PIN)"] --> B["RESET<br/>→ IDLE"] --> C["Load recipe or<br/>enter job"] --> D["START<br/>+ confirm"] --> E{"running"}
+  E -- "alarm (yellow)" --> F["fix cause → RESUME"] --> E
+  E -- "E-stop (red)" --> G["release → CLEAR → RESET"] --> B
+  E -- done --> H["COMPLETE → next job<br/>or export CSV"]
+```
+
 ## 1. Log in
 
 Tap **Login** (top right) and enter your PIN on the keypad.
