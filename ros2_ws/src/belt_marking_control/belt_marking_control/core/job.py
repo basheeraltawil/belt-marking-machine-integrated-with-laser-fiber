@@ -9,6 +9,7 @@ from .config import ControlConfig
 
 
 class CutMode(enum.IntEnum):
+    """When the knife cuts."""
     NONE = 0        # continuous marking, no cut
     EVERY = 1       # cut after every label
     EVERY_N = 2     # cut after every N labels
@@ -16,6 +17,7 @@ class CutMode(enum.IntEnum):
 
 
 class LaserDone(enum.IntEnum):
+    """How the end of marking is detected."""
     CONFIG = 0
     SIGNAL = 1
     TIMED = 2
@@ -23,6 +25,7 @@ class LaserDone(enum.IntEnum):
 
 @dataclass
 class Station:
+    """One laser machine: enabled, position after station 0, extra delay."""
     enabled: bool = True
     offset_mm: float = 0.0
     delay_s: float = 0.0
@@ -30,6 +33,7 @@ class Station:
 
 @dataclass
 class Job:
+    """A production order (also stored as a recipe)."""
     job_id: str = ''
     recipe: str = ''
     belt_width_mm: float = 25.0
@@ -67,6 +71,7 @@ class Job:
         return self.quantity
 
     def piece_length_mm(self) -> float:
+        """Length of one cut piece."""
         return self.pitch_mm * self.labels_per_piece()
 
     def use_done_signal(self, cfg: ControlConfig) -> bool:
@@ -155,6 +160,7 @@ def job_from_msg(msg) -> Job:
 
 
 def job_to_msg(job: Job, msg_type, station_type, target: Optional[object] = None):
+    """Job -> belt_marking_interfaces/JobSpec."""
     msg = target if target is not None else msg_type()
     for name in ('job_id', 'recipe', 'belt_width_mm', 'pitch_mm', 'mark_length_mm', 'lead_mm',
                  'laser_time_s', 'settle_s', 'post_mark_delay_s', 'feed_speed_mm_s',

@@ -19,6 +19,7 @@ MERGE_TOL_MM = 0.01
 
 @dataclass
 class Fire:
+    """Trigger laser `station` for `label` (after `delay_s`)."""
     station: int
     label: int
     delay_s: float
@@ -26,6 +27,7 @@ class Fire:
 
 @dataclass
 class Cut:
+    """One knife cut; `belt_coord_mm` is the cut line on the belt."""
     after_label: int          # -1 = initial trim
     belt_coord_mm: float
     labels_in_piece: int
@@ -34,6 +36,7 @@ class Cut:
 
 @dataclass
 class Stop:
+    """A belt position where the machine stops to mark and/or cut."""
     feed_mm: float
     fires: List[Fire] = field(default_factory=list)
     cut: Optional[Cut] = None
@@ -41,6 +44,7 @@ class Stop:
 
 @dataclass
 class Plan:
+    """The sorted stops of a job plus totals used for progress and OEE."""
     stops: List[Stop]
     total_labels: int
     total_cuts: int
@@ -82,6 +86,7 @@ def move_time(distance: float, v: float, a: float) -> float:
 
 
 def plan_job(job: Job, cfg: ControlConfig, accel_mm_s2: float = 100.0) -> Plan:
+    """Turn a job into sorted stops along the belt (see module docstring)."""
     stations = job.active_stations(cfg)
     x_c = cfg.machine.knife_offset_mm
     p = job.pitch_mm

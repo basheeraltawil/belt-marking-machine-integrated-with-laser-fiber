@@ -11,6 +11,7 @@ from .job import Job
 
 
 class Harness:
+    """Controller + plant model on a simulated clock, for tests and scenarios."""
 
     def __init__(self, cfg: Optional[ControlConfig] = None,
                  plant_cfg: Optional[PlantConfig] = None, dt: float = 0.01,

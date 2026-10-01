@@ -23,6 +23,7 @@ from .planner import Fire, move_time, Plan, plan_job
 
 
 class State(enum.IntEnum):
+    """PackML-based machine states (see docs/STATE_MACHINE.md)."""
     STOPPED = 0
     RESETTING = 1
     IDLE = 2
@@ -40,6 +41,7 @@ class State(enum.IntEnum):
 
 
 class Mode(enum.IntEnum):
+    """Operating modes; manual functions need MANUAL or MAINTENANCE."""
     AUTO = 0
     MANUAL = 1
     MAINTENANCE = 2
@@ -47,6 +49,7 @@ class Mode(enum.IntEnum):
 
 
 class Phase(str, enum.Enum):
+    """Sub-steps of executing one planner stop."""
     NONE = 'NONE'
     FEED = 'FEED'
     SETTLE = 'SETTLE'
@@ -67,6 +70,7 @@ POS_TOL_MM = 0.02
 
 @dataclass
 class FireState:
+    """Progress of one laser trigger at the current stop."""
     fire: Fire
     due: float = 0.0
     triggered: bool = False
@@ -76,6 +80,7 @@ class FireState:
 
 @dataclass
 class JobRun:
+    """Everything about the running job: plan, position in it, counters."""
     job: Job
     plan: Plan
     origin_mm: float
@@ -106,6 +111,7 @@ class JobRun:
 
 @dataclass
 class ManualTask:
+    """A manual operation (jog, cut, laser) running in the background."""
     kind: str
     t0: float
     step: str = 'start'
@@ -164,6 +170,7 @@ class MachineController:
 
     # =================================================================== commands
     def cmd_reset(self, user: str = '') -> tuple:
+        """STOPPED/COMPLETE -> RESETTING -> IDLE (enable drive, retract knife)."""
         if self.state not in (State.STOPPED, State.COMPLETE):
             return False, f'RESET not allowed in {self.state.name}'
         self.alarms.ack_inactive(user)
@@ -171,6 +178,7 @@ class MachineController:
         return True, 'resetting'
 
     def cmd_start(self, job: Job, user: str = '') -> tuple:
+        """Validate and plan the job, then IDLE -> STARTING -> EXECUTE."""
         if self.mode not in (Mode.AUTO, Mode.SIMULATION):
             return False, f'START needs AUTO mode (mode is {self.mode.name})'
         if self.state != State.IDLE:
@@ -194,12 +202,14 @@ class MachineController:
         return True, f'starting job {job.job_id} ({len(plan.stops)} stops)'
 
     def cmd_hold(self, user: str = '') -> tuple:
+        """Finish the current atomic step safely and go to HELD."""
         if self.state not in (State.EXECUTE, State.STARTING, State.UNHOLDING):
             return False, f'HOLD not allowed in {self.state.name}'
         self._goto(State.HOLDING)
         return True, 'holding'
 
     def cmd_unhold(self, user: str = '', option: str = '') -> tuple:
+        """HELD -> EXECUTE; option "retry" or "reject" after a laser fault."""
         if self.state != State.HELD:
             return False, f'RESUME not allowed in {self.state.name}'
         blocking = self.alarms.blocking()
@@ -213,6 +223,7 @@ class MachineController:
         return True, 'resuming'
 
     def cmd_stop(self, user: str = '') -> tuple:
+        """Controlled stop; ends the job as STOPPED."""
         if self.state in (State.STOPPED, State.STOPPING, State.ABORTING, State.ABORTED,
                           State.CLEARING):
             return False, f'STOP not allowed in {self.state.name}'
@@ -220,12 +231,14 @@ class MachineController:
         return True, 'stopping'
 
     def cmd_abort(self, user: str = '') -> tuple:
+        """Immediate stop with all outputs safe (also used by FATAL alarms)."""
         if self.state in (State.ABORTING, State.ABORTED):
             return False, 'already aborted'
         self._goto(State.ABORTING)
         return True, 'aborting'
 
     def cmd_clear(self, user: str = '') -> tuple:
+        """ABORTED -> STOPPED once the cause is gone (E-stop released, link back)."""
         if self.state != State.ABORTED:
             return False, f'CLEAR not allowed in {self.state.name}'
         # firmware faults (heartbeat lost / WDT) are what CLEARING resets, so they don't block
@@ -237,6 +250,7 @@ class MachineController:
         return True, 'clearing'
 
     def cmd_set_mode(self, mode: Mode, user: str = '') -> tuple:
+        """Change AUTO/MANUAL/MAINTENANCE; only while not running a job."""
         if self.state not in (State.STOPPED, State.IDLE, State.COMPLETE, State.ABORTED):
             return False, f'mode change not allowed in {self.state.name}'
         if self.cfg.use_sim and mode == Mode.AUTO:
@@ -248,9 +262,11 @@ class MachineController:
         return True, f'mode {mode.name}'
 
     def cmd_ack(self, code: int = 0, user: str = '') -> int:
+        """Acknowledge one alarm code, or all with code 0."""
         return self.alarms.ack(code, user)
 
     def quality_result(self, label: int, ok: bool, reason: str = '') -> None:
+        """Vision verdict for a label: counts rejects, holds after N in a row."""
         run = self.run
         if run is None or label in run.rejected_labels:
             return
@@ -285,6 +301,7 @@ class MachineController:
         return True, ''
 
     def manual_jog(self, distance_mm: float, speed_mm_s: float = 0.0) -> tuple:
+        """Move the belt by a distance (also allowed in HELD to re-align a belt)."""
         ok, why = self._manual_allowed(allow_held=True)
         if not ok:
             return False, why, None
@@ -307,6 +324,7 @@ class MachineController:
         return True, 'jogging', task
 
     def manual_cut(self) -> tuple:
+        """One knife cycle (MANUAL/MAINTENANCE)."""
         ok, why = self._manual_allowed()
         if not ok:
             return False, why, None
@@ -316,6 +334,7 @@ class MachineController:
         return True, 'cutting', self.manual
 
     def manual_laser(self, station: int, wait_done: bool = True) -> tuple:
+        """Trigger one laser station once (MANUAL/MAINTENANCE)."""
         ok, why = self._manual_allowed()
         if not ok:
             return False, why, None
@@ -334,6 +353,7 @@ class MachineController:
         return True, 'triggered', task
 
     def manual_output(self, name: str, state: bool) -> tuple:
+        """Force an auxiliary output (MAINTENANCE only)."""
         ok, why = self._manual_allowed(maintenance_only=True)
         if not ok:
             return False, why
@@ -343,6 +363,7 @@ class MachineController:
         return True, f'{name} {"on" if state else "off"}'
 
     def manual_home(self) -> tuple:
+        """Zero the position counter (no home sensor fitted)."""
         ok, why = self._manual_allowed()
         if not ok:
             return False, why
@@ -354,6 +375,7 @@ class MachineController:
 
     # ====================================================================== tick
     def tick(self, now: float) -> None:
+        """One control cycle: read inputs, raise alarms, run the current state."""
         dt = max(0.0, now - self.now)
         self.now = now
         self.hal.heartbeat(now)
@@ -838,6 +860,7 @@ class MachineController:
             self._event_alarm(CODES['KNIFE_BLADE_LIFE'], f'{self.counters.blade_cycles} cycles')
 
     def reset_blade_counter(self) -> None:
+        """Call after replacing the knife blade."""
         self.counters.blade_cycles = 0
         self._blade_warned = False
         self.alarms.clear(CODES['KNIFE_BLADE_LIFE'], self.now)
@@ -941,6 +964,7 @@ class MachineController:
 
     # ------------------------------------------------------------------- lights
     def light_request(self) -> tuple:
+        """Light tower (red, yellow, green, buzzer) for the current situation."""
         red = self.state in (State.ABORTING, State.ABORTED) or \
             any(a.definition.severity >= Severity.ERROR for a in self.alarms.alarms.values())
         yellow = self.state in (State.HOLDING, State.HELD, State.UNHOLDING, State.STOPPING,
@@ -978,6 +1002,7 @@ class MachineController:
         return 1.0
 
     def status(self) -> dict:
+        """Snapshot of the job and counters for MachineState / the UI."""
         run = self.run or self.last_run
         red, yellow, green, buzzer = self.light_request()
         return {
@@ -998,4 +1023,5 @@ class MachineController:
 
 
 def alarm_definition(code: int):
+    """Catalogue entry for an alarm code."""
     return CATALOG.get(code)

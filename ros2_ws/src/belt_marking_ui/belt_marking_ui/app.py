@@ -35,6 +35,7 @@ SCREENS = [('production', 'nav.production', ProductionScreen),
 
 
 class MainWindow(QMainWindow):
+    """Top-level window: status bar, navigation, screens."""
 
     def __init__(self, ctx: Context, kiosk: bool = False):
         super().__init__()

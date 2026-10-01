@@ -47,6 +47,7 @@ _FORMATS = {
 
 
 def crc16(data: bytes, crc: int = 0xFFFF) -> int:
+    """CRC16-CCITT-FALSE (poly 0x1021, init 0xFFFF)."""
     for b in data:
         crc ^= b << 8
         for _ in range(8):
@@ -56,6 +57,7 @@ def crc16(data: bytes, crc: int = 0xFFFF) -> int:
 
 
 def encode(msg_id: int, seq: int, payload: bytes = b'') -> bytes:
+    """Build a complete frame: AA 55 LEN SEQ ID PAYLOAD CRC16."""
     if len(payload) > MAX_PAYLOAD:
         raise ValueError('payload too long')
     body = bytes([len(payload), seq & 0xFF, msg_id]) + payload
@@ -63,10 +65,12 @@ def encode(msg_id: int, seq: int, payload: bytes = b'') -> bytes:
 
 
 def pack(msg_id: int, *fields) -> bytes:
+    """Pack payload fields of a message id."""
     return struct.pack(_FORMATS[msg_id], *fields)
 
 
 def unpack(msg_id: int, payload: bytes) -> tuple:
+    """Unpack and length-check the payload of a message id."""
     fmt = _FORMATS.get(msg_id)
     if fmt is None:
         raise ValueError(f'unknown message 0x{msg_id:02x}')
@@ -77,6 +81,7 @@ def unpack(msg_id: int, payload: bytes) -> tuple:
 
 @dataclass
 class Frame:
+    """A received, CRC-checked frame."""
     msg_id: int
     seq: int
     payload: bytes
@@ -128,6 +133,7 @@ class Parser:
 
 @dataclass
 class Status:
+    """Decoded 50 Hz STATUS message."""
     fw_ms: int
     pos_steps: int
     speed_steps_s: float

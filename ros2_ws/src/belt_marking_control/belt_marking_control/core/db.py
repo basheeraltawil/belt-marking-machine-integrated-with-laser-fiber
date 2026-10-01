@@ -53,10 +53,12 @@ def utcnow() -> str:
 
 
 def hash_pin(pin: str, salt: str) -> str:
+    """PBKDF2 hash of a PIN (never stored in clear text)."""
     return hashlib.pbkdf2_hmac('sha256', pin.encode(), salt.encode(), 60000).hex()
 
 
 class ProductionDb:
+    """SQLite access for recipes, jobs, logs, alarms, users and audit."""
 
     def __init__(self, path: str, read_only: bool = False):
         path = os.path.expanduser(path)

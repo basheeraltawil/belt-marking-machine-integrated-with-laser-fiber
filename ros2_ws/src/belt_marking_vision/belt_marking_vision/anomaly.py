@@ -19,6 +19,7 @@ from typing import Dict, List, Optional, Sequence
 
 @dataclass
 class DriftResult:
+    """Outcome of a drift check for one signal."""
     kind: str
     drift: bool
     z: float
@@ -35,12 +36,14 @@ class DriftResult:
 
 @dataclass
 class DriftDetector:
+    """Robust median/MAD drift detector for one cycle-time signal."""
     baseline_n: int = 100
     window: int = 30
     z_threshold: float = 4.0
     min_rel_change: float = 0.15
 
     def evaluate(self, kind: str, samples: Sequence[float]) -> Optional[DriftResult]:
+        """Check the latest samples against the baseline (None = not enough data)."""
         if len(samples) < self.baseline_n + self.window:
             return None
         base = list(samples[:self.baseline_n])

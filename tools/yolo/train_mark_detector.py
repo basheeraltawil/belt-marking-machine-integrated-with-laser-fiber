@@ -7,7 +7,7 @@
 Steps
   1. synthetic dataset (belt_marking_vision.yolo_dataset), auto-labelled
   2. fine-tune YOLO11n (Ultralytics), 30 epochs, 640 px
-  3. export ONNX (runs with OpenCV DNN on the Raspberry Pi, no PyTorch)
+  3. export ONNX (runs with ONNX Runtime on the Raspberry Pi, no PyTorch)
   4. compare with the classic OpenCV inspector on a fresh held-out set
      verdict classes: ok / weak / missing / burn_spot  (position is not scored)
 """

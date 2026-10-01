@@ -75,12 +75,14 @@ class PipeEnd:
 
 
 def pipe_pair() -> Tuple[PipeEnd, PipeEnd]:
+    """Two connected in-memory transports (tests)."""
     a, b = queue.Queue(), queue.Queue()
     return PipeEnd(a, b), PipeEnd(b, a)
 
 
 # ---------------------------------------------------------------------- client
 class FirmwareClient:
+    """Host side of the serial protocol; same cmd_* API as FakePlant."""
 
     def __init__(self, transport, steps_per_mm: float = 69.0, num_stations: int = 1,
                  ack_timeout_s: float = 0.1, retries: int = 3, status_timeout_s: float = 0.5,
@@ -156,6 +158,7 @@ class FirmwareClient:
             self.t.write(data)
 
     def request(self, msg_id: int, payload: bytes = b'') -> Tuple[bool, str]:
+        """Send a command and wait for ACK/NAK (with retries)."""
         with self._lock:
             self._seq = self._seq % 255 + 1          # 1..255, 0 = unsolicited
             seq = self._seq

@@ -21,6 +21,7 @@ def load_control_config(config_path: str) -> ControlConfig:
 
 
 class Session:
+    """Logged-in user, role and auto-logout."""
 
     def __init__(self, db: ProductionDb, auto_logout_s: float = 600.0):
         self.db = db
@@ -56,6 +57,7 @@ class Session:
 
 
 class Context:
+    """Shared objects for all screens: ROS bridge, DB, config, session."""
 
     def __init__(self, bridge, db: ProductionDb, cfg: ControlConfig, use_sim: bool,
                  config_path: str = ''):

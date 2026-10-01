@@ -192,13 +192,16 @@ All AI parts are optional and outside the safety path; they report, the controll
 flowchart LR
   CAM["camera after the laser"] --> SEL{"detector"}
   SEL -- classic --> CV["OpenCV: presence,<br/>contrast, position, OCR"]
-  SEL -- yolo --> Y["YOLO11n (ONNX, OpenCV DNN):<br/>mark_ok · mark_weak · burn_spot"]
+  SEL -- yolo --> Y["YOLO11n (ONNX Runtime):<br/>mark_ok · mark_weak · burn_spot"]
   CV & Y --> QR["quality/result"] --> CTRL["controller: count rejects,<br/>HOLD after N in a row"]
   DB[("cycle times")] --> AN["drift detector"] --> W["W-702 maintenance warning"]
 ```
 
-- **Vision QA:** checks every label; an OpenCV inspector or a YOLO detector trained on
-  synthetic, auto-labelled images (`tools/yolo/train_mark_detector.py`); results in
+- **Vision QA:** checks every label with an OpenCV inspector or a YOLO11n detector
+  trained on synthetic, auto-labelled images (`tools/yolo/train_mark_detector.py`, about
+  5 min on a GPU). YOLO finds marks and burn spots; a measured contrast decides weak vs
+  ok, because the network alone did not transfer that judgement to the Gazebo camera.
+  Held-out synthetic accuracy is 98.0 % (classic 47.4 %). Details and limits are in
   [docs/AI_FEATURES.md](docs/AI_FEATURES.md).
 - **Predictive maintenance:** robust drift detection on knife, laser and feed times.
 - **Docs assistant:** offline answers from this documentation; read-only.

@@ -6,7 +6,7 @@ is untouched. Each works offline on a Raspberry Pi 4.
 
 | # | Feature | Status | Where the decision is made |
 |---|---|---|---|
-| 1 | Vision quality check | implemented, tested (synthetic + Gazebo camera path) | controller counts rejects, HOLD after N in a row (E-602) |
+| 1 | Vision quality check (OpenCV rules or YOLO) | implemented, tested (synthetic + Gazebo camera) | controller counts rejects, HOLD after N in a row (E-602) |
 | 2 | Anomaly detection / predictive maintenance | implemented, tested live in simulation | warning only (W-702); maintenance decides |
 | 3 | Operator assistant (docs Q&A) | implemented (retrieval, optional local LLM) | the human reads it; it has no machine access |
 | 4 | Natural-language job entry | implemented (rule-based, UI button) | the operator checks the form and presses START |
@@ -50,6 +50,56 @@ Verified:
 Limitation: in continuous mode the last labels of a job stop between the laser and the
 camera and are not inspected. They are inspected when the next job moves them past.
 The same applies to a camera placed further downstream.
+
+## 1b. YOLO detector (optional backend)
+
+```mermaid
+flowchart LR
+  G["yolo_dataset.py<br/>synthetic images,<br/>auto-labelled"] --> T["Ultralytics<br/>YOLO11n training<br/>(GPU, ~5 min)"] --> X["export ONNX<br/>10 MB"]
+  X --> R["yolo_detector.py<br/>ONNX Runtime<br/>(no PyTorch on the Pi)"]
+  R --> H["hybrid verdict:<br/>network finds + classifies,<br/>measured contrast decides weak/ok"]
+```
+
+Classes: `mark_ok`, `mark_weak`, `burn_spot` (scorch defect). No box means a missing mark.
+
+```bash
+pip install ultralytics                                   # training machine only
+python3 tools/yolo/train_mark_detector.py --out runs/marks   # dataset, train, ONNX, evaluation
+ros2 run belt_marking_vision vision_qa_node --ros-args -p detector:=yolo \
+    -p yolo_model:=runs/marks/train/weights/best.onnx -p synthetic:=false
+```
+
+![YOLO detections](images/yolo_detections.jpg)
+
+Runtime on the Pi: `pip install onnxruntime` (ARM64 wheels). OpenCV DNN is the fallback,
+but it needs OpenCV ≥ 4.7: the OpenCV 4.5 of Ubuntu 22.04 cannot run the YOLO11 graph
+(tested). Both paths were tested with the trained model.
+
+**Results** (YOLO11n, 30 epochs, 2000 training images, RTX 4090):
+
+| Test | Classic OpenCV | YOLO |
+|---|---|---|
+| Validation set (mAP50 / mAP50-95) | – | 0.993 / 0.955 |
+| 500 held-out synthetic images, verdict ok / weak / missing / burn spot | 47.4 % | 98.0 % |
+| Gazebo QA camera, good marks | OK (contrast 150) | OK (detected, score 0.98) |
+| Gazebo QA camera, weak marks | rejected (contrast 87) | network: "ok"; hybrid check: rejected (contrast 109) → E-602 |
+
+How to read this:
+- The synthetic test favours YOLO: it comes from the same generator as the training
+  data, and it varies lighting on purpose, which the fixed-threshold classic inspector is
+  not designed for. Classic cannot detect burn spots at all.
+- In Gazebo the network found and located every mark, but it did **not** transfer the
+  weak-vs-ok judgement to a rendering it had never seen (domain gap). Therefore the
+  verdict is **hybrid**: YOLO finds the mark and classifies defects, and the measured contrast
+  in the box (calibrated threshold, 115 grey levels) decides weak vs ok.
+- The 109 vs 115 margin on Gazebo's weak marks is small: calibrate `min_contrast` on the
+  real camera with good and deliberately weak marks.
+- At 15 fps and 20 mm/s the camera's frame spacing is 1.3 mm; one good mark was rejected
+  for offset (2.2 mm > 2 mm). Use a faster camera, a strobe, or a wider offset tolerance.
+
+**For the real machine:** collect 200–500 camera images (the twin and the plant model can
+label marks automatically from the process events), fine-tune from this model, and keep
+the hybrid contrast check.
 
 ## 2. Anomaly detection / predictive maintenance
 

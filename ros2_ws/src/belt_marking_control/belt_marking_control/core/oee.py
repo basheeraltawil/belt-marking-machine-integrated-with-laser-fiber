@@ -70,6 +70,7 @@ class OeeTracker:
         return self.availability * self.performance * self.quality
 
     def report(self) -> dict:
+        """OEE figures as a dict (rounded)."""
         return {
             'run_s': round(self.run_s, 1), 'down_s': round(self.down_s, 1),
             'labels': self.labels, 'rejects': self.rejects,

@@ -8,6 +8,7 @@ from belt_marking_laser import DoneMode
 
 @dataclass
 class MachineSection:
+    """Mechanical limits and monitoring options (machine.*)."""
     knife_offset_mm: float = 56.0           # station 0 -> knife  # TODO: verify on hardware
     fork_sensor_offset_mm: float = 350.0    # fork sensor upstream of station 0
     belt_width_min_mm: float = 10.0
@@ -33,6 +34,7 @@ class MachineSection:
 
 @dataclass
 class LaserSection:
+    """Laser stations and trigger/done settings (laser.*)."""
     num_stations: int = 1
     station_offsets_mm: List[float] = field(default_factory=lambda: [0.0])
     station_delays_s: List[float] = field(default_factory=lambda: [0.0])
@@ -56,6 +58,7 @@ class LaserSection:
 
 @dataclass
 class KnifeSection:
+    """Knife timing and ejector (knife.*)."""
     extend_timeout_s: float = 1.5            # TODO: verify on hardware
     retract_timeout_s: float = 1.5           # TODO: verify on hardware
     dwell_s: float = 0.1
@@ -67,11 +70,13 @@ class KnifeSection:
 
 @dataclass
 class ZairSection:
+    """Z-Air valve behaviour (zair.*)."""
     during_mark: bool = True                 # legacy: Z-Air on while the laser marks
 
 
 @dataclass
 class ControlConfig:
+    """All controller settings; filled from machine.yaml."""
     machine: MachineSection = field(default_factory=MachineSection)
     laser: LaserSection = field(default_factory=LaserSection)
     knife: KnifeSection = field(default_factory=KnifeSection)
@@ -81,6 +86,7 @@ class ControlConfig:
     use_sim: bool = False
 
     def validate(self) -> List[str]:
+        """Consistency check of the configuration; returns error strings."""
         errors = []
         n = self.laser.num_stations
         if not 1 <= n <= 4:

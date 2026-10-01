@@ -28,6 +28,7 @@ RESET, HOLD, UNHOLD, STOP, ABORT, CLEAR = range(6)
 
 def spec(job_id, quantity, pitch=60.0, cut=JobSpec.CUT_EVERY, every_n=1, laser_s=1.0,
          width=25.0, mark=30.0, lead=10.0, done=JobSpec.LASER_DONE_CONFIG):
+    """Build a JobSpec with sensible defaults for the demos."""
     return JobSpec(job_id=job_id, quantity=quantity, pitch_mm=pitch, mark_length_mm=mark,
                    lead_mm=lead, cut_mode=cut, cut_every_n=every_n, laser_time_s=laser_s,
                    settle_s=0.1, feed_speed_mm_s=30.0, belt_width_mm=width,
@@ -35,6 +36,7 @@ def spec(job_id, quantity, pitch=60.0, cut=JobSpec.CUT_EVERY, every_n=1, laser_s
 
 
 class Demo:
+    """Drives a running simulation through a scenario via public ROS interfaces."""
 
     def __init__(self):
         self.node = rclpy.create_node('scenario_demo')

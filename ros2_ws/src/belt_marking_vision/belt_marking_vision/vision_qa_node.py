@@ -51,6 +51,7 @@ def image_to_array(msg: Image) -> np.ndarray:
 
 
 class VisionQaNode(Node):
+    """Inspects every label after the laser and publishes quality/result."""
 
     def __init__(self):
         super().__init__('vision_qa_node')

@@ -23,6 +23,7 @@ from .ros_conv import dispatch, snapshot_to_msg
 
 
 class SerialBridgeNode(LifecycleNode):
+    """Real hardware layer: serves hw/* over the serial link."""
 
     def __init__(self):
         super().__init__('serial_bridge_node')

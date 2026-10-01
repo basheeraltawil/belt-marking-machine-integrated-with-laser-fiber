@@ -13,6 +13,7 @@ from typing import Callable, List, Optional
 
 @dataclass
 class SimLaserFaults:
+    """Faults that can be injected into the simulated laser."""
     no_response: bool = False     # ignores the pedal completely
     late_s: float = 0.0           # extra marking time (e.g. to provoke a timeout)
     weak_mark: bool = False       # marks, but with poor contrast (vision QA reject)
@@ -21,6 +22,7 @@ class SimLaserFaults:
 
 @dataclass
 class SimCo2Laser:
+    """Simulated laser controller in foot-switch mode."""
     station: int
     marking_time_s: float = 3.0
     start_latency_s: float = 0.05

@@ -11,6 +11,7 @@ from typing import Callable, Dict, List, Optional
 
 
 class Severity(enum.IntEnum):
+    """How serious an alarm is."""
     INFO = 0
     WARNING = 1
     ERROR = 2
@@ -18,6 +19,7 @@ class Severity(enum.IntEnum):
 
 
 class Reaction(enum.IntEnum):
+    """What the state machine does."""
     NONE = 0
     HOLD = 1
     STOP = 2
@@ -26,6 +28,7 @@ class Reaction(enum.IntEnum):
 
 @dataclass(frozen=True)
 class AlarmDef:
+    """Static description of an alarm (catalogue entry)."""
     code: int
     name: str
     severity: Severity
@@ -110,6 +113,7 @@ CODES = {a.name: a.code for a in CATALOG.values()}
 
 @dataclass
 class AlarmInstance:
+    """One occurrence of an alarm with its state."""
     definition: AlarmDef
     detail: str
     raised_at: float
@@ -131,6 +135,7 @@ class AlarmManager:
     alarms: Dict[int, AlarmInstance] = field(default_factory=dict)
 
     def raise_(self, code: int, now: float, detail: str = '') -> Optional[AlarmInstance]:
+        """Raise an alarm; returns None if it is already active."""
         existing = self.alarms.get(code)
         if existing is not None and existing.active:
             return None                           # already active: not a new event
@@ -150,6 +155,7 @@ class AlarmManager:
         return None
 
     def clear(self, code: int, now: float) -> None:
+        """Mark an alarm inactive (it stays listed until acknowledged if latched)."""
         inst = self.alarms.get(code)
         if inst is None or not inst.active:
             return
@@ -160,6 +166,7 @@ class AlarmManager:
             del self.alarms[code]
 
     def ack(self, code: int = 0, user: str = '') -> int:
+        """Acknowledge one code (or all with 0); returns how many."""
         count = 0
         for c, inst in list(self.alarms.items()):
             if code not in (0, c) or inst.acknowledged:
@@ -185,6 +192,7 @@ class AlarmManager:
         return count
 
     def active(self) -> List[AlarmInstance]:
+        """Alarms sorted by severity, then time."""
         return sorted(self.alarms.values(), key=lambda a: (-a.definition.severity, a.raised_at))
 
     def blocking(self, min_reaction: Reaction = Reaction.HOLD) -> List[AlarmInstance]:

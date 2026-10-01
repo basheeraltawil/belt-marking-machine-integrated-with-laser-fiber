@@ -41,7 +41,8 @@ def main():
                               (60, 2.0, CutMode.EVERY), (60, 2.0, CutMode.NONE),
                               (120, 3.0, CutMode.EVERY_N)]:
         job = Job(job_id='A', quantity=20, pitch_mm=pitch,
-                  mark_length_mm=min(pitch * 0.5, 40.0), lead_mm=pitch * 0.2, cut_mode=cut, cut_every_n=5, laser_time_s=laser,
+                  mark_length_mm=min(pitch * 0.5, 40.0), lead_mm=pitch * 0.2,
+                  cut_mode=cut, cut_every_n=5, laser_time_s=laser,
                   settle_s=0.05, feed_speed_mm_s=30.0)
         model = plan_job(job, cfg).ideal_cycle_s
         sim = simulated_cycle(job, laser)

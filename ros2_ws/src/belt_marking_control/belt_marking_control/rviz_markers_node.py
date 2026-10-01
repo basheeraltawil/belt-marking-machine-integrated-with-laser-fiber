@@ -17,6 +17,7 @@ def _color(m, r, g, b, a=1.0):
 
 
 class RvizMarkersNode(Node):
+    """Publishes belt, marks, cut lines and state text for RViz."""
 
     def __init__(self):
         super().__init__('rviz_markers_node')

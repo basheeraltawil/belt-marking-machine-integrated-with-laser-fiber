@@ -20,6 +20,7 @@ from .ros_conv import msg_to_snapshot
 
 
 class RosHardwareClient(HardwareInterface):
+    """HardwareInterface over ROS (hw/command, hw/io_status)."""
 
     def __init__(self, node, stale_s: float = 0.5, heartbeat_hz: float = 10.0):
         self.node = node

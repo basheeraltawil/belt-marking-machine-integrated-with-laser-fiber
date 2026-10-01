@@ -29,6 +29,7 @@ FAULT_NAMES = (
 
 @dataclass
 class PlantConfig:
+    """Physical parameters of the simulated machine."""
     steps_per_mm: float = 69.0            # legacy value  # TODO: verify on hardware
     default_speed_mm_s: float = 14.5
     max_speed_mm_s: float = 60.0
@@ -47,6 +48,7 @@ class PlantConfig:
 
 @dataclass
 class PlantMark:
+    """A mark as it really landed on the simulated belt (ground truth)."""
     station: int
     belt_coord_mm: float
     t: float
@@ -106,6 +108,7 @@ class FakePlant:
     # ------------------------------------------------------------------ faults
     def inject(self, fault: str, enable: bool = True, value: float = 0.0,
                station: int = 0) -> Tuple[bool, str]:
+        """Switch a simulated fault on or off (see FAULT_NAMES)."""
         if fault == 'clear_all':
             for key in list(self.faults):
                 name, _, st = key.partition(':')

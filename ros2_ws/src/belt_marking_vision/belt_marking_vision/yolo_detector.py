@@ -1,4 +1,8 @@
-"""YOLO mark detector at runtime: ONNX model + OpenCV DNN (no PyTorch on the Pi).
+"""YOLO mark detector at runtime: ONNX model, no PyTorch needed on the Pi.
+
+Runtime: ONNX Runtime (``pip install onnxruntime``, ARM64 wheels for the Pi) if
+installed, else OpenCV DNN. Note: the OpenCV 4.5 shipped with Ubuntu 22.04 cannot run the
+YOLO11 graph; OpenCV >= 4.7 can.
 
 Pipeline
     letterbox to 640x640 -> RGB, /255, NCHW -> network -> output (1, 4 + C, N)
@@ -33,6 +37,7 @@ from .yolo_dataset import CLASSES
 
 @dataclass
 class Detection:
+    """One detected box in original image pixels."""
     cls: int
     name: str
     score: float
@@ -72,9 +77,13 @@ def decode(output: np.ndarray, r: float, pad_x: float, pad_y: float, conf: float
     x0 = (cx - w / 2 - pad_x) / r
     y0 = (cy - h / 2 - pad_y) / r
     boxes = np.stack([x0, y0, w / r, h / r], 1)
-    idx = cv2.dnn.NMSBoxesBatched(boxes.tolist(), best.tolist(), cls.tolist(), conf, iou)
+    keep_idx = []
+    for c in np.unique(cls):             # class-wise NMS (NMSBoxesBatched needs OpenCV 4.7+)
+        members = np.nonzero(cls == c)[0]
+        kept = cv2.dnn.NMSBoxes(boxes[members].tolist(), best[members].tolist(), conf, iou)
+        keep_idx.extend(members[np.array(kept, dtype=int).reshape(-1)])
     out = []
-    for i in np.array(idx).reshape(-1):
+    for i in keep_idx:
         bx, by, bw, bh = boxes[i]
         out.append(Detection(int(cls[i]), CLASSES[int(cls[i])], float(best[i]),
                              float(bx), float(by), float(bx + bw), float(by + bh)))
@@ -82,17 +91,33 @@ def decode(output: np.ndarray, r: float, pad_x: float, pad_y: float, conf: float
 
 
 class YoloDetector:
+    """Runs the exported ONNX model (ONNX Runtime, or OpenCV DNN as fallback)."""
 
     def __init__(self, onnx_path: str, size: int = 640, conf: float = 0.4, iou: float = 0.5):
-        self.net = cv2.dnn.readNetFromONNX(onnx_path)
         self.size, self.conf, self.iou = size, conf, iou
+        try:
+            import onnxruntime as ort  # noqa: PLC0415 - optional, preferred runtime
+            self.session = ort.InferenceSession(onnx_path,
+                                                providers=['CPUExecutionProvider'])
+            self.input_name = self.session.get_inputs()[0].name
+            self.net = None
+            self.runtime = 'onnxruntime'
+        except ImportError:
+            self.session = None
+            self.net = cv2.dnn.readNetFromONNX(onnx_path)
+            self.runtime = 'opencv-dnn'
 
     def detect(self, image: np.ndarray) -> List[Detection]:
+        """Detections sorted by confidence."""
         bgr = image if image.ndim == 3 else cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         boxed, r, px, py = letterbox(bgr, self.size)
-        blob = cv2.dnn.blobFromImage(boxed, 1 / 255.0, swapRB=True)
-        self.net.setInput(blob)
-        return decode(self.net.forward(), r, px, py, self.conf, self.iou)
+        blob = cv2.dnn.blobFromImage(boxed, 1 / 255.0, swapRB=True)   # NCHW, RGB, 0..1
+        if self.session is not None:
+            output = self.session.run(None, {self.input_name: blob})[0]
+        else:
+            self.net.setInput(blob)
+            output = self.net.forward()
+        return decode(output, r, px, py, self.conf, self.iou)
 
 
 def box_contrast(image: np.ndarray, d: Detection, ring: int = 12) -> float:
@@ -126,6 +151,7 @@ class YoloInspector:
 
     def inspect(self, image: np.ndarray, expected_text: str = '',
                 expected_center_px=None) -> InspectResult:
+        """Inspect one image of a label (same result type as MarkInspector)."""
         dets = self.det.detect(image)
         details = {'detections': [(d.name, round(d.score, 2)) for d in dets]}
         if any(d.name == 'burn_spot' for d in dets):

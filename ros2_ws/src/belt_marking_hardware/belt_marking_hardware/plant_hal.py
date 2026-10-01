@@ -7,6 +7,7 @@ from .hal import HardwareInterface, IoSnapshot, MotionIdCounter
 
 
 class PlantHal(HardwareInterface):
+    """HardwareInterface that calls the plant model directly (no ROS)."""
 
     def __init__(self, plant: FakePlant):
         self.plant = plant

@@ -39,6 +39,7 @@ def _stamp(t: float) -> Time:
 
 
 class ControlNode(Node):
+    """ROS wrapper: action, services and topics around MachineController."""
 
     def __init__(self):
         super().__init__('control_node')

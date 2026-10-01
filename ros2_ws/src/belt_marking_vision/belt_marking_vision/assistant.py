@@ -57,6 +57,7 @@ def default_docs_dir() -> str:
 
 
 class DocsAssistant:
+    """Offline question answering over docs/ (BM25 + alarm catalogue)."""
 
     def __init__(self, docs_dir: Optional[str] = None, k1: float = 1.4, b: float = 0.75):
         self.sections = self._load(docs_dir or default_docs_dir())

@@ -24,6 +24,7 @@ TOL_MM = 0.02
 
 @dataclass
 class ScenarioResult:
+    """Checks and metrics collected by one scenario run."""
     number: int
     name: str
     checks: List[tuple] = field(default_factory=list)   # (description, ok)

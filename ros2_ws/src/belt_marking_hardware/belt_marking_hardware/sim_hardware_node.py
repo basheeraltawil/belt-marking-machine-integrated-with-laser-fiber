@@ -25,6 +25,7 @@ _EVENT_TYPES = {'mark': ProcessEvent.MARK, 'cut': ProcessEvent.CUT,
 
 
 class SimHardwareNode(Node):
+    """Simulated hardware layer: serves hw/* from the plant model."""
 
     def __init__(self):
         super().__init__('sim_hardware_node')

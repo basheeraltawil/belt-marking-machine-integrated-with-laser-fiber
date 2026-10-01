@@ -20,6 +20,7 @@ import numpy as np
 
 @dataclass
 class InspectConfig:
+    """Thresholds of the classic inspector (calibrate on the machine)."""
     mm_per_px: float = 0.1            # camera scale (calibrate: known label length / px)
     min_area_ratio: float = 0.003     # mark pixels / ROI pixels
     detect_level: float = 25.0        # grey levels above the belt that count as 'marked'
@@ -32,6 +33,7 @@ class InspectConfig:
 
 @dataclass
 class InspectResult:
+    """Verdict for one label; `reason` is empty when ok."""
     ok: bool
     score: float
     reason: str = ''
@@ -52,6 +54,7 @@ def _tesseract() -> Optional[Callable[[np.ndarray], str]]:
 
 
 class MarkInspector:
+    """Classic OpenCV inspection: presence, contrast, position, OCR."""
 
     def __init__(self, cfg: Optional[InspectConfig] = None,
                  ocr: Optional[Callable[[np.ndarray], str]] = None, use_tesseract: bool = True):
@@ -60,6 +63,7 @@ class MarkInspector:
 
     def inspect(self, image: np.ndarray, expected_text: str = '',
                 expected_center_px: Optional[float] = None) -> InspectResult:
+        """Inspect one image of a label."""
         c = self.cfg
         gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         r0, r1 = (int(gray.shape[0] * f) for f in c.roi_across)
