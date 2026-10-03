@@ -117,7 +117,7 @@ Q = 99.96 %, **OEE = 91.9 %**.
 
 Drift detector (robust statistics, insensitive to single outliers):
 
-$$\sigma \approx 1.4826\cdot MAD,\qquad z = \frac{\operatorname{median}(x_{last\,W}) - m_0}{1.253\,\sigma/\sqrt{W}},\qquad
+$$\sigma \approx 1.4826\cdot MAD,\qquad z = \frac{\text{median}(x_{last\,W}) - m_0}{1.253\,\sigma/\sqrt{W}},\qquad
 \text{warn if } |z| > 4 \text{ and } |\Delta| > 15\,\%$$
 
 | Knife slowdown | Cycles until W-702 (3 % noise) |
